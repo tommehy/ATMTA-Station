@@ -63,7 +63,7 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 #define MAX_SAVE_SLOTS 20 // Save slots for regular players
 #define MAX_SAVE_SLOTS_MEMBER 20 // Save slots for BYOND members
 
-#define MAX_GEAR_COST 5
+#define MAX_GEAR_COST config.max_loadout_points
 
 #define TAB_CHAR 0
 #define TAB_GAME 1
@@ -273,8 +273,8 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 			dat += "<a href='byond://?src=\ref[user];preference=flavor_text;task=input'>Set Flavor Text</a><br>"
 			if(lentext(flavor_text) <= 40)
 				if(!lentext(flavor_text))	dat += "\[...\]<br>"
-				else						dat += "[flavor_text]<br>"
-			else dat += "[TextPreview(flavor_text)]...<br>"
+				else						dat += "[lhtml_encode(flavor_text)]<br>"
+			else dat += "[TextPreview(lhtml_encode(flavor_text))]...<br>"
 
 			dat += "<h2>Hair & Accessories</h2>"
 
@@ -435,9 +435,9 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 			var/fcolor =  "#3366CC"
 			if(total_cost < MAX_GEAR_COST)
 				fcolor = "#E67300"
-			dat += "<table align='center' width='820px'>"
-			dat += "<tr><td colspan=3><center><b><font color='[fcolor]'>[total_cost]/[MAX_GEAR_COST]</font> loadout points spent.</b> \[<a href='?_src_=prefs;preference=gear;clear_loadout=1'>Clear Loadout</a>\]</center></td></tr>"
-			dat += "<tr><td colspan=3><center><b>"
+			dat += "<table align='center' width='100%'>"
+			dat += "<tr><td colspan=4><center><b><font color='[fcolor]'>[total_cost]/[MAX_GEAR_COST]</font> loadout points spent.</b> \[<a href='?_src_=prefs;preference=gear;clear_loadout=1'>Clear Loadout</a>\]</center></td></tr>"
+			dat += "<tr><td colspan=4><center><b>"
 
 			var/firstcat = 1
 			for(var/category in loadout_categories)
@@ -452,22 +452,22 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 			dat += "</b></center></td></tr>"
 
 			var/datum/loadout_category/LC = loadout_categories[gear_tab]
-			dat += "<tr><td colspan=3><hr></td></tr>"
-			dat += "<tr><td colspan=3><b><center>[LC.category]</center></b></td></tr>"
-			dat += "<tr><td colspan=3><hr></td></tr>"
+			dat += "<tr><td colspan=4><hr></td></tr>"
+			dat += "<tr><td colspan=4><b><center>[LC.category]</center></b></td></tr>"
+			dat += "<tr><td colspan=4><hr></td></tr>"
 			for(var/gear_name in LC.gear)
 				var/datum/gear/G = LC.gear[gear_name]
 				var/ticked = (G.display_name in gear)
 				dat += "<tr style='vertical-align:top;'><td width=15%><a style='white-space:normal;' [ticked ? "class='linkOn' " : ""]href='?_src_=prefs;preference=gear;toggle_gear=[G.display_name]'>[G.display_name]</a></td>"
-				dat += "<td width = 5% style='vertical-align:top'>[G.cost]</td>"
+				dat += "<td width = 5% style='vertical-align:top'>[G.cost]</td><td>"
 				if(G.allowed_roles)
-					dat += "<td><font size=2>Restrictions: "
+					dat += "<font size=2>Restrictions: "
 					for(var/role in G.allowed_roles)
 						dat += role + " "
-					dat += "</font></td>"
-				dat += "<td><font size=2><i>[G.description]</i></font></td></tr>"
+					dat += "</font>"
+				dat += "</td><td><font size=2><i>[G.description]</i></font></td></tr>"
 				if(ticked)
-					. += "<tr><td colspan=3>"
+					. += "<tr><td colspan=4>"
 					for(var/datum/gear_tweak/tweak in G.gear_tweaks)
 						. += " <a href='?_src_=prefs;preference=gear;gear=[G.display_name];tweak=\ref[tweak]'>[tweak.get_contents(get_tweak_metadata(G, tweak))]</a>"
 					. += "</td></tr>"
@@ -526,10 +526,12 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 
 	//The job before the current job. I only use this to get the previous jobs color when I'm filling in blank rows.
 	var/datum/job/lastJob
-	if (!job_master)		return
+	if(!job_master)		return
 	for(var/datum/job/job in job_master.occupations)
 
 		if(job.admin_only)
+			continue
+		if (job.prisonlist_job)
 			continue
 
 		index += 1
@@ -650,10 +652,10 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 	return
 
 /datum/preferences/proc/SetJobPreferenceLevel(var/datum/job/job, var/level)
-	if (!job)
+	if(!job)
 		return 0
 
-	if (level == 1) // to high
+	if(level == 1) // to high
 		// remove any other job(s) set to high
 		job_support_med |= job_support_high
 		job_engsec_med |= job_engsec_high
@@ -664,59 +666,59 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 		job_medsci_high = 0
 		job_karma_high = 0
 
-	if (job.department_flag == SUPPORT)
+	if(job.department_flag == SUPPORT)
 		job_support_low &= ~job.flag
 		job_support_med &= ~job.flag
 		job_support_high &= ~job.flag
 
 		switch(level)
-			if (1)
+			if(1)
 				job_support_high |= job.flag
-			if (2)
+			if(2)
 				job_support_med |= job.flag
-			if (3)
+			if(3)
 				job_support_low |= job.flag
 
 		return 1
-	else if (job.department_flag == ENGSEC)
+	else if(job.department_flag == ENGSEC)
 		job_engsec_low &= ~job.flag
 		job_engsec_med &= ~job.flag
 		job_engsec_high &= ~job.flag
 
 		switch(level)
-			if (1)
+			if(1)
 				job_engsec_high |= job.flag
-			if (2)
+			if(2)
 				job_engsec_med |= job.flag
-			if (3)
+			if(3)
 				job_engsec_low |= job.flag
 
 		return 1
-	else if (job.department_flag == MEDSCI)
+	else if(job.department_flag == MEDSCI)
 		job_medsci_low &= ~job.flag
 		job_medsci_med &= ~job.flag
 		job_medsci_high &= ~job.flag
 
 		switch(level)
-			if (1)
+			if(1)
 				job_medsci_high |= job.flag
-			if (2)
+			if(2)
 				job_medsci_med |= job.flag
-			if (3)
+			if(3)
 				job_medsci_low |= job.flag
 
 		return 1
-	else if (job.department_flag == KARMA)
+	else if(job.department_flag == KARMA)
 		job_karma_low &= ~job.flag
 		job_karma_med &= ~job.flag
 		job_karma_high &= ~job.flag
 
 		switch(level)
-			if (1)
+			if(1)
 				job_karma_high |= job.flag
-			if (2)
+			if(2)
 				job_karma_med |= job.flag
-			if (3)
+			if(3)
 				job_karma_low |= job.flag
 
 		return 1
@@ -731,7 +733,7 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 		ShowChoices(user)
 		return
 
-	if (!isnum(desiredLvl))
+	if(!isnum(desiredLvl))
 		to_chat(user, "\red UpdateJobPreference - desired level was not a number. Please notify coders!")
 		ShowChoices(user)
 		return
@@ -789,23 +791,23 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 	HTML += "<a href=\"byond://?src=\ref[user];preference=records;task=med_record\">Medical Records</a><br>"
 
 	if(lentext(med_record) <= 40)
-		HTML += "[med_record]"
+		HTML += "[lhtml_encode(med_record)]"
 	else
-		HTML += "[copytext(med_record, 1, 37)]..."
+		HTML += "[lhtml_encode(copytext(med_record, 1, 37))]..."
 
 	HTML += "<br><br><a href=\"byond://?src=\ref[user];preference=records;task=gen_record\">Employment Records</a><br>"
 
 	if(lentext(gen_record) <= 40)
-		HTML += "[gen_record]"
+		HTML += "[lhtml_encode(gen_record)]"
 	else
-		HTML += "[copytext(gen_record, 1, 37)]..."
+		HTML += "[lhtml_encode(copytext(gen_record, 1, 37))]..."
 
 	HTML += "<br><br><a href=\"byond://?src=\ref[user];preference=records;task=sec_record\">Security Records</a><br>"
 
 	if(lentext(sec_record) <= 40)
-		HTML += "[sec_record]<br>"
+		HTML += "[lhtml_encode(sec_record)]<br>"
 	else
-		HTML += "[copytext(sec_record, 1, 37)]...<br>"
+		HTML += "[lhtml_encode(copytext(sec_record, 1, 37))]...<br>"
 
 	HTML += "<br>"
 	HTML += "<a href=\"byond://?src=\ref[user];preference=records;records=-1\">\[Done\]</a>"
@@ -991,9 +993,9 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 				else
 					return 0
 				SetChoices(user)
-			if ("alt_title")
+			if("alt_title")
 				var/datum/job/job = locate(href_list["job"])
-				if (job)
+				if(job)
 					var/choices = list(job.title) + job.alt_titles
 					var/choice = input("Pick a title for [job.title].", "Character Generation", GetPlayerAltTitle(job)) as anything in choices | null
 					if(choice)
@@ -1032,30 +1034,30 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 		else
 			user << browse(null, "window=records")
 		if(href_list["task"] == "med_record")
-			var/medmsg = input(usr,"Set your medical notes here.","Medical Records",html_decode(med_record)) as message
+			var/medmsg = input(usr,"Set your medical notes here.","Medical Records",lhtml_decode(med_record)) as message
 
 			if(medmsg != null)
 				medmsg = copytext(medmsg, 1, MAX_PAPER_MESSAGE_LEN)
-				medmsg = html_encode(medmsg)
+				medmsg = lhtml_encode(medmsg)
 
 				med_record = medmsg
 				SetRecords(user)
 
 		if(href_list["task"] == "sec_record")
-			var/secmsg = input(usr,"Set your security notes here.","Security Records",html_decode(sec_record)) as message
+			var/secmsg = input(usr,"Set your security notes here.","Security Records",lhtml_decode(sec_record)) as message
 
 			if(secmsg != null)
 				secmsg = copytext(secmsg, 1, MAX_PAPER_MESSAGE_LEN)
-				secmsg = html_encode(secmsg)
+				secmsg = lhtml_encode(secmsg)
 
 				sec_record = secmsg
 				SetRecords(user)
 		if(href_list["task"] == "gen_record")
-			var/genmsg = input(usr,"Set your employment notes here.","Employment Records",html_decode(gen_record)) as message
+			var/genmsg = input(usr,"Set your employment notes here.","Employment Records",lhtml_decode(gen_record)) as message
 
 			if(genmsg != null)
 				genmsg = copytext(genmsg, 1, MAX_PAPER_MESSAGE_LEN)
-				genmsg = html_encode(genmsg)
+				genmsg = lhtml_encode(genmsg)
 
 				gen_record = genmsg
 				SetRecords(user)
@@ -1149,7 +1151,7 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 			switch(href_list["preference"])
 				if("name")
 					var/raw_name = input(user, "Choose your character's name:", "Character Preference") as text|null
-					if (!isnull(raw_name)) // Check to ensure that the user entered text (rather than cancel.)
+					if(!isnull(raw_name)) // Check to ensure that the user entered text (rather than cancel.)
 						var/new_name = reject_bad_name(raw_name)
 						if(new_name)
 							real_name = new_name
@@ -1162,7 +1164,7 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 						age = max(min( round(text2num(new_age)), AGE_MAX),AGE_MIN)
 				if("species")
 
-					var/list/new_species = list("Human", "Tajaran", "Skrell", "Unathi", "Diona", "Vulpkanin")
+					var/list/new_species = list("Human")
 					var/prev_species = species
 //						var/whitelisted = 0
 
@@ -1219,15 +1221,15 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 
 						// Don't wear another species' underwear!
 						var/datum/sprite_accessory/S = underwear_list[underwear]
-						if(!(species in S.species_allowed))
+						if(!S || !(species in S.species_allowed))
 							underwear = random_underwear(gender, species)
 
 						S = undershirt_list[undershirt]
-						if(!(species in S.species_allowed))
+						if(!S || !(species in S.species_allowed))
 							undershirt = random_undershirt(gender, species)
 
 						S = socks_list[socks]
-						if(!(species in S.species_allowed))
+						if(!S || !(species in S.species_allowed))
 							socks = random_socks(gender, species)
 
 						//reset hair colour and skin colour
@@ -1278,7 +1280,7 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 				if("metadata")
 					var/new_metadata = input(user, "Enter any information you'd like others to see, such as Roleplay-preferences:", "Game Preference" , metadata)  as message|null
 					if(new_metadata)
-						metadata = sanitize(copytext(new_metadata,1,MAX_MESSAGE_LEN))
+						metadata = sanitize_local(copytext(new_metadata,1,MAX_MESSAGE_LEN))
 
 				if("b_type")
 					var/new_b_type = input(user, "Choose your character's blood-type:", "Character Preference") as null|anything in list( "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-" )
@@ -1529,11 +1531,11 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 						nanotrasen_relation = new_relation
 
 				if("flavor_text")
-					var/msg = input(usr,"Set the flavor text in your 'examine' verb. This can also be used for OOC notes and preferences!","Flavor Text",html_decode(flavor_text)) as message
+					var/msg = input(usr,"Set the flavor text in your 'examine' verb. This can also be used for OOC notes and preferences!","Flavor Text",lhtml_decode(flavor_text)) as message
 
 					if(msg != null)
 						msg = copytext(msg, 1, MAX_MESSAGE_LEN)
-						msg = html_encode(msg)
+						msg = lhtml_encode(msg)
 
 						flavor_text = msg
 
@@ -1817,7 +1819,7 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 					close_load_dialog(user)
 
 				if("tab")
-					if (href_list["tab"])
+					if(href_list["tab"])
 						current_tab = text2num(href_list["tab"])
 
 	ShowChoices(user)
@@ -1844,10 +1846,9 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 	character.name = character.real_name
 
 	character.flavor_text = flavor_text
-	if(character.ckey && !jobban_isbanned(character, "Records"))
-		character.med_record = med_record
-		character.sec_record = sec_record
-		character.gen_record = gen_record
+	character.med_record = med_record
+	character.sec_record = sec_record
+	character.gen_record = gen_record
 
 	character.change_gender(gender)
 	character.age = age
@@ -1921,15 +1922,15 @@ var/global/list/special_role_times = list( //minimum age (in days) for accounts 
 
 	if(disabilities & DISABILITY_FLAG_DEAF)
 		character.dna.SetSEState(DEAFBLOCK,1,1)
-		character.sdisabilities|=DEAF
+		character.disabilities|=DEAF
 
 	if(disabilities & DISABILITY_FLAG_BLIND)
 		character.dna.SetSEState(BLINDBLOCK,1,1)
-		character.sdisabilities|=BLIND
+		character.disabilities|=BLIND
 
 	if(disabilities & DISABILITY_FLAG_MUTE)
 		character.dna.SetSEState(MUTEBLOCK,1,1)
-		character.sdisabilities |= MUTE
+		character.disabilities |= MUTE
 
 	S.handle_dna(character)
 

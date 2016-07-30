@@ -25,6 +25,10 @@
 	/obj/item/device/healthanalyzer, /obj/item/device/flashlight, \
 	/obj/item/device/radio, /obj/item/weapon/tank/emergency_oxygen,/obj/item/device/rad_laser)
 	armor = list(melee = 10, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 10, rad = 0)
+	species_fit = list("Vox")
+	sprite_sheets = list(
+		"Vox" = 'icons/mob/species/vox/suit.dmi'
+		)
 
 //Botonist
 /obj/item/clothing/suit/apron
@@ -48,7 +52,7 @@
 	item_state = "bio_suit"
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	flags_inv = HIDEJUMPSUIT
-	flags = ONESIZEFITSALL
+	flags_size = ONESIZEFITSALL
 	allowed = list(/obj/item/weapon/disk, /obj/item/weapon/stamp, /obj/item/weapon/reagent_containers/food/drinks/flask, /obj/item/weapon/melee, /obj/item/weapon/storage/lockbox/medal, /obj/item/device/flash, /obj/item/weapon/storage/box/matches, /obj/item/weapon/lighter, /obj/item/clothing/mask/cigarette, /obj/item/weapon/storage/fancy/cigarettes, /obj/item/weapon/tank/emergency_oxygen)
 	species_fit = list("Vox")
 	sprite_sheets = list(
@@ -69,12 +73,13 @@
 		)
 
 //Chaplain
-/obj/item/clothing/suit/chaplain_hoodie
+/obj/item/clothing/suit/hooded/chaplain_hoodie
 	name = "chaplain hoodie"
 	desc = "This suit says to you 'hush'!"
 	icon_state = "chaplain_hoodie"
 	item_state = "chaplain_hoodie"
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
+	hoodtype = /obj/item/clothing/head/chaplain_hood
 	allowed = list(/obj/item/weapon/storage/bible, /obj/item/weapon/nullrod, /obj/item/weapon/reagent_containers/food/drinks/bottle/holywater, /obj/item/weapon/storage/fancy/candle_box, /obj/item/candle, /obj/item/weapon/tank/emergency_oxygen)
 	species_fit = list("Vox")
 	sprite_sheets = list(
@@ -82,13 +87,14 @@
 		)
 
 //Chaplain
-/obj/item/clothing/suit/nun
+/obj/item/clothing/suit/hooded/nun
 	name = "nun robe"
 	desc = "Maximum piety in this star system."
 	icon_state = "nun"
 	item_state = "nun"
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS|HANDS
 	flags_inv = HIDESHOES|HIDEJUMPSUIT
+	hoodtype = /obj/item/clothing/head/nun_hood
 	allowed = list(/obj/item/weapon/storage/bible, /obj/item/weapon/nullrod, /obj/item/weapon/reagent_containers/food/drinks/bottle/holywater, /obj/item/weapon/storage/fancy/candle_box, /obj/item/candle, /obj/item/weapon/tank/emergency_oxygen)
 	species_fit = list("Vox")
 	sprite_sheets = list(
@@ -119,10 +125,6 @@
 	blood_overlay_type = "armor"
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO
 	allowed = list(/obj/item/weapon/kitchen/knife)
-	species_fit = list("Vox")
-	sprite_sheets = list(
-		"Vox" = 'icons/mob/species/vox/suit.dmi'
-		)
 
 //Detective
 /obj/item/clothing/suit/storage/det_suit
@@ -136,7 +138,7 @@
 	armor = list(melee = 25, bullet = 10, laser = 25, energy = 10, bomb = 0, bio = 0, rad = 0)
 	cold_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	heat_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
-	flags = ONESIZEFITSALL
+	flags_size = ONESIZEFITSALL
 	species_fit = list("Vox")
 	sprite_sheets = list(
 		"Vox" = 'icons/mob/species/vox/suit.dmi'
@@ -173,7 +175,11 @@
 	armor = list(melee = 25, bullet = 10, laser = 25, energy = 10, bomb = 0, bio = 0, rad = 0)
 	cold_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	heat_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
-	flags = ONESIZEFITSALL
+	flags_size = ONESIZEFITSALL
+	species_fit = list("Vox")
+	sprite_sheets = list(
+		"Vox" = 'icons/mob/species/vox/suit.dmi'
+		)
 
 //Engineering
 /obj/item/clothing/suit/storage/hazardvest
@@ -189,6 +195,12 @@
 		)
 
 //Lawyer
+/obj/item/clothing/suit/storage/lawyer
+	species_fit = list("Vox")
+	sprite_sheets = list(
+		"Vox" = 'icons/mob/species/vox/suit.dmi'
+		)
+
 /obj/item/clothing/suit/storage/lawyer/blackjacket
 	name = "black suit jacket"
 	desc = "A snappy dress jacket."
@@ -198,7 +210,7 @@
 	body_parts_covered = UPPER_TORSO|ARMS
 	ignore_suitadjust = 0
 	suit_adjusted = 1
-	action_button_name = "Button/Unbutton Jacket"
+	actions_types = list(/datum/action/item_action/button)
 	adjust_flavour = "unbutton"
 
 /obj/item/clothing/suit/storage/lawyer/bluejacket
@@ -210,7 +222,7 @@
 	body_parts_covered = UPPER_TORSO|ARMS
 	ignore_suitadjust = 0
 	suit_adjusted = 1
-	action_button_name = "Button/Unbutton Jacket"
+	actions_types = list(/datum/action/item_action/button)
 	adjust_flavour = "unbutton"
 
 /obj/item/clothing/suit/storage/lawyer/purpjacket
@@ -231,8 +243,12 @@
 	body_parts_covered = UPPER_TORSO|ARMS
 	ignore_suitadjust = 0
 	suit_adjusted = 1
-	action_button_name = "Button/Unbutton Jacket"
+	actions_types = list(/datum/action/item_action/button)
 	adjust_flavour = "unbutton"
+	species_fit = list("Vox")
+	sprite_sheets = list(
+		"Vox" = 'icons/mob/species/vox/suit.dmi'
+		)
 
 /obj/item/clothing/suit/storage/ntrep
 	name = "\improper NanoTrasen Representative jacket"
@@ -242,8 +258,12 @@
 	blood_overlay_type = "coat"
 	body_parts_covered = UPPER_TORSO|ARMS
 	ignore_suitadjust = 0
-	action_button_name = "Button/Unbutton Jacket"
+	actions_types = list(/datum/action/item_action/button)
 	adjust_flavour = "unbutton"
+	species_fit = list("Vox")
+	sprite_sheets = list(
+		"Vox" = 'icons/mob/species/vox/suit.dmi'
+		)
 
 //Medical
 /obj/item/clothing/suit/storage/fr_jacket
@@ -256,8 +276,12 @@
 	/obj/item/device/healthanalyzer, /obj/item/device/flashlight, /obj/item/device/radio, /obj/item/weapon/tank/emergency_oxygen,/obj/item/device/rad_laser)
 	ignore_suitadjust = 0
 	suit_adjusted = 1
-	action_button_name = "Button/Unbutton Jacket"
+	actions_types = list(/datum/action/item_action/button)
 	adjust_flavour = "unbutton"
+	species_fit = list("Vox")
+	sprite_sheets = list(
+		"Vox" = 'icons/mob/species/vox/suit.dmi'
+		)
 
 //Mime
 /obj/item/clothing/suit/suspenders
@@ -266,3 +290,7 @@
 	icon = 'icons/obj/clothing/belts.dmi'
 	icon_state = "suspenders"
 	blood_overlay_type = "armor" //it's the less thing that I can put here
+	species_fit = list("Vox")
+	sprite_sheets = list(
+		"Vox" = 'icons/mob/species/vox/suit.dmi'
+		)

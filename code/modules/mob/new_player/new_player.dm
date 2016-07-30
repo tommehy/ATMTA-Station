@@ -70,8 +70,8 @@
 	..()
 
 	statpanel("Status")
-	if (client.statpanel == "Status" && ticker)
-		if (ticker.current_state != GAME_STATE_PREGAME)
+	if(client.statpanel == "Status" && ticker)
+		if(ticker.current_state != GAME_STATE_PREGAME)
 			stat(null, "Station Time: [worldtime2text()]")
 	statpanel("Lobby")
 	if(client.statpanel=="Lobby" && ticker)
@@ -245,7 +245,8 @@
 	if(jobban_isbanned(src,rank))	return 0
 	if(!is_job_whitelisted(src, rank))	 return 0
 	if(!job.player_old_enough(src.client))	return 0
-	if(job.admin_only && !(check_rights(R_ADMIN, 0))) return 0
+	if(job.admin_only && !(check_rights(R_EVENT, 0))) return 0
+	if(!job.prisonlist_job && !check_prisonlist(ckey(key)) && !(check_rights(R_MENTOR, 0))) return 0
 
 	if(config.assistantlimit)
 		if(job.title == "Civilian")
@@ -259,6 +260,14 @@
 					return 1
 				return 0
 	return 1
+
+/mob/new_player/proc/IsPrisonListJob(rank)
+	var/datum/job/job = job_master.GetJob(rank)
+	if(job.prisonlist_job)
+		return 1
+	else
+		return 0
+
 
 /mob/new_player/proc/IsAdminJob(rank)
 	var/datum/job/job = job_master.GetJob(rank)
@@ -275,7 +284,7 @@
 		return 0
 
 /mob/new_player/proc/AttemptLateSpawn(rank,var/spawning_at)
-	if (src != usr)
+	if(src != usr)
 		return 0
 	if(!ticker || ticker.current_state != GAME_STATE_PLAYING)
 		to_chat(usr, "\red The round is either not ready, or has already finished...")
@@ -314,27 +323,30 @@
 	//Find our spawning point.
 	var/join_message
 	var/datum/spawnpoint/S
-
-	if(IsAdminJob(rank))
-		if(IsERTSpawnJob(rank))
-			character.loc = pick(ertdirector)
-		else
-			character.loc = pick(aroomwarp)
-		join_message = "has arrived"
+	if(IsPrisonListJob(rank))
+		join_message = "transfered to the station permabrig for heavy crimes"
+		character.loc = pick(permaprisoner)
 	else
-		if(spawning_at)
-			S = spawntypes[spawning_at]
-		if(S && istype(S))
-			if(S.check_job_spawning(rank))
-				character.loc = pick(S.turfs)
-				join_message = S.msg
+		if(IsAdminJob(rank))
+			if(IsERTSpawnJob(rank))
+				character.loc = pick(ertdirector)
 			else
-				to_chat(character, "Your chosen spawnpoint ([S.display_name]) is unavailable for your chosen job. Spawning you at the Arrivals shuttle instead.")
+				character.loc = pick(aroomwarp)
+			join_message = "has arrived"
+		else
+			if(spawning_at)
+				S = spawntypes[spawning_at]
+			if(S && istype(S))
+				if(S.check_job_spawning(rank))
+					character.loc = pick(S.turfs)
+					join_message = S.msg
+				else
+					to_chat(character, "Your chosen spawnpoint ([S.display_name]) is unavailable for your chosen job. Spawning you at the Arrivals shuttle instead.")
+					character.loc = pick(latejoin)
+					join_message = "has arrived on the station"
+			else
 				character.loc = pick(latejoin)
 				join_message = "has arrived on the station"
-		else
-			character.loc = pick(latejoin)
-			join_message = "has arrived on the station"
 
 	character.lastarea = get_area(loc)
 	// Moving wheelchair if they have one
@@ -351,6 +363,8 @@
 		callHook("latespawn", list(character))
 	else
 		data_core.manifest_inject(character)
+		if(IsPrisonListJob(rank))
+			data_core.fabricate_crime(character)
 		ticker.minds += character.mind//Cyborgs and AIs handle this in the transform proc.	//TODO!!!!! ~Carn
 		AnnounceArrival(character, rank, join_message)
 		callHook("latespawn", list(character))
@@ -360,11 +374,11 @@
 
 
 /mob/new_player/proc/AnnounceArrival(var/mob/living/carbon/human/character, var/rank, var/join_message)
-	if (ticker.current_state == GAME_STATE_PLAYING)
+	if(ticker.current_state == GAME_STATE_PLAYING)
 		var/ailist[] = list()
-		for (var/mob/living/silicon/ai/A in living_mob_list)
+		for(var/mob/living/silicon/ai/A in living_mob_list)
 			ailist += A
-		if (ailist.len)
+		if(ailist.len)
 			var/mob/living/silicon/ai/announcer = pick(ailist)
 			if(character.mind)
 				if((character.mind.assigned_role != "Cyborg") && (character.mind.special_role != "MODE"))
@@ -385,11 +399,11 @@
 					global_announcer.autosay("[character.real_name],[rank ? " [rank]," : " visitor," ] [join_message ? join_message : "has arrived on the station"].", "Arrivals Announcement Computer")
 
 /mob/new_player/proc/AnnounceCyborg(var/mob/living/character, var/rank, var/join_message)
-	if (ticker.current_state == GAME_STATE_PLAYING)
+	if(ticker.current_state == GAME_STATE_PLAYING)
 		var/ailist[] = list()
-		for (var/mob/living/silicon/ai/A in living_mob_list)
+		for(var/mob/living/silicon/ai/A in living_mob_list)
 			ailist += A
-		if (ailist.len)
+		if(ailist.len)
 			var/mob/living/silicon/ai/announcer = pick(ailist)
 			if(character.mind)
 				if((character.mind.special_role != "MODE"))

@@ -86,9 +86,9 @@
 
 		updateicon()
 
-	else if (istype(I, /obj/item/weapon/card/id)||istype(I, /obj/item/device/pda))
+	else if(istype(I, /obj/item/weapon/card/id)||istype(I, /obj/item/device/pda))
 		if(open)
-			if (src.allowed(user))
+			if(src.allowed(user))
 				src.locked = !src.locked
 				to_chat(user, "<span class='notice'>Controls are now [src.locked ? "locked" : "unlocked"].</span>")
 			else
@@ -157,7 +157,7 @@ Transponder Codes:<UL>"}
 		usr.set_machine(src)
 
 		if(href_list["locedit"])
-			var/newloc = copytext(sanitize(input("Enter New Location", "Navigation Beacon", location) as text|null),1,MAX_MESSAGE_LEN)
+			var/newloc = copytext(sanitize_local(input("Enter New Location", "Navigation Beacon", location) as text|null),1,MAX_MESSAGE_LEN)
 			if(newloc)
 				location = newloc
 				updateDialog()

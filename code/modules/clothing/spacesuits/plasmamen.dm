@@ -11,7 +11,7 @@
 	flags_inv = HIDEGLOVES|HIDESHOES
 	max_heat_protection_temperature = SPACE_SUIT_MAX_TEMP_PROTECT
 	species_restricted = list("Plasmaman")
-	flags = STOPSPRESSUREDMAGE  | PLASMAGUARD
+	flags = STOPSPRESSUREDMAGE
 
 	icon_state = "plasmaman_suit"
 	item_state = "plasmaman_suit"
@@ -38,7 +38,7 @@
 /obj/item/clothing/head/helmet/space/eva/plasmaman
 	name = "plasmaman helmet"
 	desc = "A special containment helmet designed to protect a plasmaman's volatile body from outside exposure and quickly extinguish it in emergencies."
-	flags = STOPSPRESSUREDMAGE | PLASMAGUARD
+	flags = STOPSPRESSUREDMAGE
 	species_restricted = list("Plasmaman")
 
 	icon_state = "plasmaman_helmet0"
@@ -46,13 +46,9 @@
 	var/base_state = "plasmaman_helmet"
 	var/brightness_on = 4 //luminosity when on
 	var/on = 0
-	action_button_name = "Toggle Helmet Light"
+	actions_types = list(/datum/action/item_action/toggle_helmet_light)
 
 /obj/item/clothing/head/helmet/space/eva/plasmaman/attack_self(mob/user)
-	if(!isturf(user.loc))
-		to_chat(user, "<span class='warning'>You cannot turn the light on while in this [user.loc].</span>")//To prevent some lighting anomalities.
-
-		return
 	toggle_light(user)
 
 /obj/item/clothing/head/helmet/space/eva/plasmaman/proc/toggle_light(mob/user)
@@ -67,6 +63,10 @@
 	if(istype(user,/mob/living/carbon/human))
 		var/mob/living/carbon/human/H = user
 		H.update_inv_head()
+
+	for(var/X in actions)
+		var/datum/action/A = X
+		A.UpdateButtonIcon()
 
 // ENGINEERING
 /obj/item/clothing/suit/space/eva/plasmaman/assistant

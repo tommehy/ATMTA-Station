@@ -320,7 +320,7 @@
 		if("Captain", "Head of Personnel")
 			favoured_types = list(/obj/item/clothing, /obj/item/weapon/stamp/captain,/obj/item/weapon/disk/nuclear)
 		if("Nanotrasen Representative")
-			favoured_types = list(/obj/item/clothing, /obj/item/weapon/stamp/centcom, /obj/item/weapon/paper, /obj/item/weapon/melee/baton/loaded/ntcane)
+			favoured_types = list(/obj/item/clothing, /obj/item/weapon/stamp/centcom, /obj/item/weapon/paper, /obj/item/weapon/melee/classic_baton/ntcane)
 			functions += "paperwork"
 		if("Magistrate", "Internal Affairs Agent")
 			favoured_types = list(/obj/item/clothing, /obj/item/weapon/stamp/law, /obj/item/weapon/paper)
@@ -571,12 +571,12 @@
 
 /mob/living/carbon/human/interactive/hear_say(message, verb = "says", datum/language/language = null, alt_name = "", italics = 0, mob/speaker = null, sound/speech_sound, sound_vol)
 	if(!istype(speaker, /mob/living/carbon/human/interactive))
-		knownStrings |= html_decode(message)
+		knownStrings |= lhtml_decode(message)
 	..()
 
 /mob/living/carbon/human/interactive/hear_radio(message, verb = "says", datum/language/language=null, part_a, part_b, mob/speaker = null, hard_to_hear = 0, vname = "", atom/follow_target)
 	if(!istype(speaker, /mob/living/carbon/human/interactive))
-		knownStrings |= html_decode(message)
+		knownStrings |= lhtml_decode(message)
 	..()
 
 /mob/living/carbon/human/interactive/proc/doProcess()

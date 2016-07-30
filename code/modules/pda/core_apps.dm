@@ -59,7 +59,7 @@
 			var/n = input("Please enter message", name, notehtml) as message
 			if(pda.loc == usr)
 				note = adminscrub(n)
-				notehtml = html_decode(note)
+				notehtml = lhtml_decode(note)
 				note = replacetext(note, "\n", "<br>")
 			else
 				pda.close(usr)
@@ -91,7 +91,7 @@
 		var/pressure = environment.return_pressure()
 		var/total_moles = environment.total_moles()
 
-		if (total_moles)
+		if(total_moles)
 			var/o2_level = environment.oxygen/total_moles
 			var/n2_level = environment.nitrogen/total_moles
 			var/co2_level = environment.carbon_dioxide/total_moles

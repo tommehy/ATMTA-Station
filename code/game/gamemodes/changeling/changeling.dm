@@ -8,7 +8,7 @@ var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon"
 	name = "changeling"
 	config_tag = "changeling"
 	restricted_jobs = list("AI", "Cyborg")
-	protected_jobs = list("Security Officer", "Warden", "Detective", "Head of Security", "Captain", "Blueshield", "Nanotrasen Representative", "Security Pod Pilot", "Magistrate", "Brig Physician", "Internal Affairs Agent", "Nanotrasen Navy Officer", "Special Operations Officer")
+	protected_jobs = list("Security Officer", "Warden", "Detective", "Head of Security", "Captain", "Blueshield", "Nanotrasen Representative", "Security Pod Pilot", "Magistrate", "Brig Physician", "Internal Affairs Agent", "D-class Prisoner", "Nanotrasen Navy Officer", "Special Operations Officer")
 	protected_species = list("Machine", "Slime People", "Plasmaman")
 	required_players = 15
 	required_enemies = 1
@@ -103,7 +103,7 @@ var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon"
 		kill_objective.find_target()
 		changeling.objectives += kill_objective
 
-		if (!(locate(/datum/objective/escape) in changeling.objectives))
+		if(!(locate(/datum/objective/escape) in changeling.objectives))
 			var/datum/objective/escape/escape_with_identity/identity_theft = new
 			identity_theft.owner = changeling
 			identity_theft.target = kill_objective.target
@@ -116,7 +116,7 @@ var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon"
 					identity_theft.explanation_text = "Escape on the shuttle or an escape pod with the identity of [identity_theft.target_real_name], the [identity_theft.target.assigned_role] while wearing their identification card."
 			changeling.objectives += identity_theft
 
-	if (!(locate(/datum/objective/escape) in changeling.objectives))
+	if(!(locate(/datum/objective/escape) in changeling.objectives))
 		if(prob(70))
 			var/datum/objective/escape/escape_objective = new
 			escape_objective.owner = changeling
@@ -129,12 +129,12 @@ var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon"
 	return
 
 /datum/game_mode/proc/greet_changeling(var/datum/mind/changeling, var/you_are=1)
-	if (you_are)
+	if(you_are)
 		to_chat(changeling.current, "<B>\red You are a changeling!</B>")
 	to_chat(changeling.current, "<b>\red Use say \":g message\" to communicate with your fellow changelings. Remember: you get all of their absorbed DNA if you absorb them.</b>")
 	to_chat(changeling.current, "<B>You must complete the following tasks:</B>")
-	if (changeling.current.mind)
-		if (changeling.current.mind.assigned_role == "Clown")
+	if(changeling.current.mind)
+		if(changeling.current.mind.assigned_role == "Clown")
 			to_chat(changeling.current, "You have evolved beyond your clownish nature, allowing you to wield weapons without harming yourself.")
 			changeling.current.mutations.Remove(CLUMSY)
 
@@ -179,11 +179,11 @@ var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon"
 			continue
 		changelings_alive++
 
-	if (changelings_alive)
+	if(changelings_alive)
 		changelingdeath = 0
 		return ..()
 	else
-		if (!changelingdeath)
+		if(!changelingdeath)
 			changelingdeathtime = world.time
 			changelingdeath = 1
 		if(world.time-changelingdeathtime > TIME_TO_GET_REVIVED)
@@ -201,7 +201,7 @@ var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon"
 		var/text = "<FONT size = 3><B>The changelings were:</B></FONT>"
 		for(var/datum/mind/changeling in changelings)
 			var/changelingwin = 1
-
+			var/karma_reward = 0
 			text += "<br>[changeling.key] was [changeling.name] ("
 			if(changeling.current)
 				if(changeling.current.stat == DEAD)
@@ -230,10 +230,13 @@ var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon"
 						feedback_add_details("changeling_objective","[objective.type]|FAIL")
 						changelingwin = 0
 					count++
+					karma_reward = count - 1
 
 			if(changelingwin)
 				text += "<br><font color='green'><B>The changeling was successful!</B></font>"
 				feedback_add_details("changeling_success","SUCCESS")
+				sql_report_objective_karma(changeling.key, karma_reward)
+				to_chat(world, "<b>[changeling.key] got [karma_reward] karma points for completing objectives!</b>")
 			else
 				text += "<br><font color='red'><B>The changeling has failed.</B></font>"
 				feedback_add_details("changeling_success","FAIL")

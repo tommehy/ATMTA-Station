@@ -88,7 +88,7 @@
 	item_state = "g_suit"
 	item_color = "officer"
 	displays_id = 0
-	flags = ONESIZEFITSALL
+	flags_size = ONESIZEFITSALL
 
 /obj/item/clothing/under/rank/centcom/captain
 	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Captain\" and bears \"N.C.V. Fearless CV-286\" on the left shounder."
@@ -105,7 +105,7 @@
 	item_state = "g_suit"
 	item_color = "officer"
 	displays_id = 0
-	flags = ONESIZEFITSALL
+	flags_size = ONESIZEFITSALL
 
 /obj/item/clothing/under/rank/centcom/representative
 	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Ensign\" and bears \"N.S.S. Cyberiad\" on the left shounder."
@@ -114,7 +114,7 @@
 	item_state = "g_suit"
 	item_color = "officer"
 	displays_id = 0
-	flags = ONESIZEFITSALL
+	flags_size = ONESIZEFITSALL
 
 /obj/item/clothing/under/rank/centcom/diplomatic
 	desc = "A very gaudy and official looking uniform of the Nanotrasen Diplomatic Corps."
@@ -231,7 +231,7 @@
 	icon_state = "red_suit"
 	item_state = "r_suit"
 	item_color = "red_suit"
-	flags = ONESIZEFITSALL
+	flags_size = ONESIZEFITSALL
 
 /obj/item/clothing/under/suit_jacket/navy
 	name = "navy suit"
@@ -709,3 +709,15 @@
 			to_chat(user,"<span class='warning'>You can't fit inside while wearing that \the [user.get_item_by_slot(slot_id)].</span>")
 			return 0
 	return 1
+
+/obj/item/clothing/under/cursedclown
+	name = "cursed clown suit"
+	desc = "It wasn't already?"
+	icon = 'icons/goonstation/objects/clothing/uniform.dmi'
+	icon_state = "cursedclown"
+	item_state = "cclown_uniform"
+	item_color = "cursedclown"
+	icon_override = 'icons/goonstation/mob/clothing/uniform.dmi'
+	lefthand_file = 'icons/goonstation/mob/inhands/clothing_lefthand.dmi'
+	righthand_file = 'icons/goonstation/mob/inhands/clothing_righthand.dmi'
+	flags = NODROP

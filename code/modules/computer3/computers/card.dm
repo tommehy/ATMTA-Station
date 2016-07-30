@@ -181,7 +181,7 @@
 		// assume linked_db since called by interact()
 		var/crew = ""
 		var/list/L = list()
-		for (var/datum/data/record/t in data_core.general)
+		for(var/datum/data/record/t in data_core.general)
 			var/R = t.fields["name"] + " - " + t.fields["rank"]
 			L += R
 		for(var/R in sortList(L))
@@ -269,7 +269,7 @@
 				computer.cardslot.insert(card,1)
 
 		if("print" in href_list)
-			if (printing)
+			if(printing)
 				return
 
 			printing = 1
@@ -277,7 +277,7 @@
 			var/obj/item/weapon/paper/P = new /obj/item/weapon/paper( computer.loc )
 			P.info = "<B>Crew Manifest:</B><BR>"
 			var/list/L = list()
-			for (var/datum/data/record/t in data_core.general)
+			for(var/datum/data/record/t in data_core.general)
 				var/R = t.fields["name"] + " - " + t.fields["rank"]
 				L += R
 			for(var/R in sortList(L))
@@ -304,7 +304,7 @@
 			if(auth)
 				var/t1 = href_list["assign"]
 				if(t1 == "Custom")
-					var/temp_t = sanitize(copytext(input("Enter a custom job assignment.","Assignment"),1,MAX_MESSAGE_LEN))
+					var/temp_t = sanitize_local(copytext(input("Enter a custom job assignment.","Assignment"),1,MAX_MESSAGE_LEN))
 					if(temp_t)
 						t1 = temp_t
 				set_default_access(t1)

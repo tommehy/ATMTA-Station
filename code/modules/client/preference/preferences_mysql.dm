@@ -59,7 +59,7 @@
 /datum/preferences/proc/save_preferences(client/C)
 
 	// Might as well scrub out any malformed be_special list entries while we're here
-	for (var/role in be_special)
+	for(var/role in be_special)
 		if(!(role in special_roles))
 			log_to_dd("[C.key] had a malformed role entry: '[role]'. Removing!")
 			be_special -= role
@@ -369,10 +369,10 @@
 												job_karma_high='[job_karma_high]',
 												job_karma_med='[job_karma_med]',
 												job_karma_low='[job_karma_low]',
-												flavor_text='[sql_sanitize_text(html_decode(flavor_text))]',
-												med_record='[sql_sanitize_text(html_decode(med_record))]',
-												sec_record='[sql_sanitize_text(html_decode(sec_record))]',
-												gen_record='[sql_sanitize_text(html_decode(gen_record))]',
+												flavor_text='[sql_sanitize_text(lhtml_decode(flavor_text))]',
+												med_record='[sql_sanitize_text(lhtml_decode(med_record))]',
+												sec_record='[sql_sanitize_text(lhtml_decode(sec_record))]',
+												gen_record='[sql_sanitize_text(lhtml_decode(gen_record))]',
 												player_alt_titles='[playertitlelist]',
 												disabilities='[disabilities]',
 												organ_data='[organlist]',
@@ -430,7 +430,7 @@
 											'[job_medsci_high]', '[job_medsci_med]', '[job_medsci_low]',
 											'[job_engsec_high]', '[job_engsec_med]', '[job_engsec_low]',
 											'[job_karma_high]', '[job_karma_med]', '[job_karma_low]',
-											'[sql_sanitize_text(html_encode(flavor_text))]', '[sql_sanitize_text(html_encode(med_record))]', '[sql_sanitize_text(html_encode(sec_record))]', '[sql_sanitize_text(html_encode(gen_record))]',
+											'[sql_sanitize_text(lhtml_encode(flavor_text))]', '[sql_sanitize_text(lhtml_encode(med_record))]', '[sql_sanitize_text(lhtml_encode(sec_record))]', '[sql_sanitize_text(lhtml_encode(gen_record))]',
 											'[playertitlelist]',
 											'[disabilities]', '[organlist]', '[rlimblist]', '[nanotrasen_relation]', '[speciesprefs]',
 											'[socks]', '[body_accessory]', '[gearlist]')

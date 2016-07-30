@@ -20,7 +20,7 @@
 		var/obj/spacepod/my_pod = TR.my_atom
 		var/enabled = TR.enabled
 		if(my_pod && enabled)
-			var/podname = capitalize(sanitize(my_pod.name))
+			var/podname = capitalize(sanitize_local(my_pod.name))
 			var/list/chairs = list()
 			if(my_pod.pilot || my_pod.passengers)
 				if(my_pod.pilot)
@@ -36,7 +36,7 @@
 
 	ui = nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
 
-	if (!ui)
+	if(!ui)
 		ui = new(user, src, ui_key, "pod_tracking.tmpl", "Pod Tracking Console", 400, 500)
 		ui.set_initial_data(data)
 		ui.open()

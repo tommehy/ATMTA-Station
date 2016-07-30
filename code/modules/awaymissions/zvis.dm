@@ -1,7 +1,7 @@
 /area/awaymission/upperlevel
 	name = "Open Space"
 	color = "#888"
-	lighting_use_dynamic = 0
+	dynamic_lighting = 0
 	requires_power = 0
 
 // Used by /turf/unsimulated/floor/upperlevel as a reference for where the other floor is
@@ -21,6 +21,9 @@
 /obj/effect/levelref/New()
 	..()
 	levels += src
+
+/obj/effect/levelref/initialize()
+	..()
 	for(var/obj/effect/levelref/O in levels)
 		if(id == O.id && O != src)
 			other = O
@@ -104,7 +107,7 @@
 /turf/unsimulated/floor/upperlevel/New()
 	..()
 	var/obj/effect/levelref/R = locate() in get_area(src)
-	if(R)
+	if(R && R.other)
 		init(R)
 
 /turf/unsimulated/floor/upperlevel/Destroy()
@@ -159,6 +162,8 @@
 	..()
 	portals += src
 
+/obj/effect/view_portal/initialize()
+	..()
 	if(id)
 		for(var/obj/effect/view_portal/O in portals)
 			if(id == O.id && O != src && can_link(O))

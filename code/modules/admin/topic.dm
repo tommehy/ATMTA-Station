@@ -877,7 +877,7 @@
 
 	else if(href_list["boot2"])
 		var/mob/M = locate(href_list["boot2"])
-		if (ismob(M))
+		if(ismob(M))
 			if(!check_if_greater_rights_than(M.client))
 				return
 			to_chat(M, "\red You have been kicked from the server")
@@ -1094,7 +1094,7 @@
 	else if(href_list["c_mode2"])
 		if(!check_rights(R_ADMIN|R_SERVER))	return
 
-		if (ticker && ticker.mode)
+		if(ticker && ticker.mode)
 			return alert(usr, "The game has already started.", null, null, null, null)
 		master_mode = href_list["c_mode2"]
 		log_admin("[key_name(usr)] set the mode as [master_mode].")
@@ -1160,9 +1160,9 @@
 		var/painame = "Default"
 		var/name = ""
 		if(alert(usr, "Do you want to set their name or let them choose their own name?", "Name Choice", "Set Name", "Let them choose") == "Set Name")
-			name = sanitize(copytext(input(usr, "Enter a name for the new pAI. Default name is [painame].", "pAI Name", painame),1,MAX_NAME_LEN))
+			name = sanitize_local(copytext(input(usr, "Enter a name for the new pAI. Default name is [painame].", "pAI Name", painame),1,MAX_NAME_LEN))
 		else
-			name = sanitize(copytext(input(H, "An admin wants to make you into a pAI. Choose a name. Default is [painame].", "pAI Name", painame),1,MAX_NAME_LEN))
+			name = sanitize_local(copytext(input(H, "An admin wants to make you into a pAI. Choose a name. Default is [painame].", "pAI Name", painame),1,MAX_NAME_LEN))
 
 		if(!name)
 			name = painame
@@ -1181,7 +1181,7 @@
 		var/speech = input("What will [key_name(M)] say?.", "Force speech", "")// Don't need to sanitize, since it does that in say(), we also trust our admins.
 		if(!speech)	return
 		M.say(speech)
-		speech = sanitize(speech) // Nah, we don't trust them
+		speech = sanitize_local(speech) // Nah, we don't trust them
 		log_admin("[key_name(usr)] forced [key_name(M)] to say: [speech]")
 		message_admins("\blue [key_name_admin(usr)] forced [key_name_admin(M)] to say: [speech]")
 
@@ -1592,10 +1592,10 @@
 		if(isliving(M))
 			var/mob/living/L = M
 			var/status
-			switch (M.stat)
-				if (0) status = "Alive"
-				if (1) status = "<font color='orange'><b>Unconscious</b></font>"
-				if (2) status = "<font color='red'><b>Dead</b></font>"
+			switch(M.stat)
+				if(0) status = "Alive"
+				if(1) status = "<font color='orange'><b>Unconscious</b></font>"
+				if(2) status = "<font color='red'><b>Dead</b></font>"
 			health_description = "Status = [status]"
 			health_description += "<BR>Oxy: [L.getOxyLoss()] - Tox: [L.getToxLoss()] - Fire: [L.getFireLoss()] - Brute: [L.getBruteLoss()] - Clone: [L.getCloneLoss()] - Brain: [L.getBrainLoss()]"
 		else
@@ -1611,7 +1611,7 @@
 		to_chat(src.owner, "Name = <b>[M.name]</b>; Real_name = [M.real_name]; Mind_name = [M.mind?"[M.mind.name]":""]; Key = <b>[M.key]</b>;")
 		to_chat(src.owner, "Location = [location_description];")
 		to_chat(src.owner, "[special_role_description]")
-		to_chat(src.owner, "(<a href='?src=\ref[usr];priv_msg=\ref[M]'>PM</a>) (<A HREF='?src=\ref[src];adminplayeropts=\ref[M]'>PP</A>) (<A HREF='?_src_=vars;Vars=\ref[M]'>VV</A>) (<A HREF='?src=\ref[src];subtlemessage=\ref[M]'>SM</A>) (<A HREF='?src=\ref[src];adminplayerobservefollow=\ref[M]'>FLW</A>) (<A HREF='?src=\ref[src];secretsadmin=check_antagonist'>CA</A>)")
+		to_chat(src.owner, "(<a href='?src=\ref[usr];priv_msg=\ref[M]'>PM</a>) (<A HREF='?src=\ref[src];adminplayeropts=\ref[M]'>PP</A>) (<A HREF='?_src_=vars;Vars=\ref[M]'>VV</A>) (<A HREF='?src=\ref[src];subtlemessage=\ref[M]'>SM</A>) (<A HREF='?src=\ref[src];adminplayerobservefollow=\ref[M]'>FLW</A>) (<A HREF='?_src_=holder;adminpunish=\ref[M]'>PN</A>) (<A HREF='?_src_=holder;whitelisttoggle=\ref[M]'>WL</A>) (<A HREF='?src=\ref[src];secretsadmin=check_antagonist'>CA</A>)")
 
 	else if(href_list["adminspawncookie"])
 		if(!check_rights(R_ADMIN|R_EVENT))	return
@@ -1636,6 +1636,47 @@
 		message_admins("[key_name_admin(H)] got their cookie, spawned by [key_name_admin(src.owner)]")
 		feedback_inc("admin_cookies_spawned",1)
 		to_chat(H, "\blue Your prayers have been answered!! You received the <b>best cookie</b>!")
+
+	else if(href_list["adminpunish"])
+		if(!check_rights(R_ADMIN))	return
+
+		var/mob/living/P = locate(href_list["adminpunish"])
+		if(!isliving(P))
+			to_chat(usr, "This can only be used on instances of type /mob/living")
+			return
+
+		var/Punishment = input( "How much you want to punish [P] (brute dmg)?", 1) as num
+		P.adjustBruteLoss(Punishment)
+		playsound(P.loc, 'sound/effects/adminpunish.ogg', 75, 0, 0, 1)
+		P.do_jitter_animation(20)
+		P.stuttering = 20
+		var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
+		s.set_up(5, 1, P)
+		s.start()
+		log_admin("[key_name(src.owner)] punished [key_name(P)]")
+		message_admins("[key_name_admin(P)]have been punished by [key_name_admin(src.owner)]")
+		to_chat(P, "\red <b>GODS PUNISHED YOU FOR YOUR SINS!</b>")
+
+	else if(href_list["whitelisttoggle"])
+		if(!check_rights(R_ADMIN))	return
+
+		var/mob/living/P = locate(href_list["whitelisttoggle"])
+		if(!P.client)
+			to_chat(usr, "<span class='warning'>[P] doesn't seem to have an active client.</span>")
+			return
+
+		if(check_prisonlist(ckey(P.mind.key)))
+			if(alert(usr, "Player listed in the whitelist. Remove [key_name(P)] from the whitelist?", "Message", "Yes", "No") != "Yes")
+				return
+			bwhitelist_remove(ckey(P.mind.key))
+		else
+			if(alert(usr, "Player NOT listed in the whitelist. Add [key_name(P)] to the whitelist?", "Message", "Yes", "No") != "Yes")
+				return
+			if(!check_rights(R_PERMISSIONS))
+				to_chat(usr, "<span class='warning'>ONLY SECRETARY AND HIGHER RANKS CAN ADD PLAYERS INTO WHITELIST.</span>")
+				message_admins("[key_name_admin(src.owner)] doesn't have rights to add players into whitelist.")
+			else
+				bwhitelist_save(ckey(P.mind.key))
 
 	else if(href_list["BlueSpaceArtillery"])
 		if(!check_rights(R_ADMIN|R_EVENT))	return
@@ -1707,7 +1748,7 @@
 		if(!istype(H))
 			to_chat(usr, "This can only be used on instances of type /mob/living/carbon/human")
 			return
-		var/etypes = list("borging","corgifying","firedeath","braindeath","honktumor","demotion")
+		var/etypes = list("Borgification","Corgification","Death By Fire","Total Brain Death","Honk Tumor","Cluwne","Demotion Notice")
 		var/eviltype = input(src.owner, "Which type of evil fax do you wish to send [H]?","Its good to be baaaad...", "") as null|anything in etypes
 		if(!(eviltype in etypes))
 			return
@@ -1718,7 +1759,7 @@
 		var/obj/machinery/photocopier/faxmachine/fax = locate(href_list["originfax"])
 
 		P.name = "Central Command - [customname]"
-		P.info = "<b>A reminder: per the terms of your contract, stupid faxes will get you demoted, or worse.</b>"
+		P.info = "<b>You <i>really</i> should've known better.</b>"
 		P.myeffect = eviltype
 		P.mytarget = H
 		if(alert("Do you want the Evil Fax to activate automatically if [H] tries to ignore it?",,"Yes", "No") == "Yes")
@@ -1758,19 +1799,23 @@
 		var/obj/item/weapon/paper/P = new /obj/item/weapon/paper(null)
 		var/obj/machinery/photocopier/faxmachine/fax = locate(href_list["originfax"])
 		P.name = "Central Command - paper"
-		var/stypes = list("handle it yourself","illegible","not signed","sorry, not right now","stop wasting our time")
+		var/stypes = list("Handle it yourselves!","Illegible fax","Fax not signed","Not Right Now","You are wasting our time", "Keep up the good work", "ERT Instructions")
 		var/stype = input(src.owner, "Which type of standard reply do you wish to send to [H]?","Choose your paperwork", "") as null|anything in stypes
 		var/tmsg = "<font face='Verdana' color='black'><center><img src = 'ntlogo.png'><BR><BR><BR><font size='4'><B>NanoTrasen Science Station Cyberiad</B></font><BR><BR><BR><font size='4'>NAS Trurl Communications Department Report</font></center><BR><BR>"
-		if(stype == "handle it yourself")
-			tmsg += "Greetings, esteemed crewmember. Your fax has been <B><I>DECLINED</I></B> automatically by NAS Trurl Fax Registration.<BR><BR>Please proceed in accordance with Standard Operating Procedure and/or Space Law. You are fully trained to handle this situation without Central Command intervention."
-		else if(stype == "illegible")
-			tmsg += "Greetings, esteemed crewmember. Your fax has been <B><I>DECLINED</I></B> automatically by NAS Trurl Fax Registration.<BR><BR>Your fax was too poorly written for our system to interpret."
-		else if(stype == "not signed")
-			tmsg += "Greetings, esteemed crewmember. Your fax has been <B><I>DECLINED</I></B> automatically by NAS Trurl Fax Registration.<BR><BR>Your fax was not properly signed and/or stamped."
-		else if(stype == "sorry, not right now")
-			tmsg += "Greetings, esteemed crewmember. Unfortunately, we are unable to spare the resources to assist you at this time."
-		else if(stype == "stop wasting our time")
-			tmsg += "Stop wasting our time."
+		if(stype == "Handle it yourselves!")
+			tmsg += "Greetings, esteemed crewmember. Your fax has been <B><I>DECLINED</I></B> automatically by NAS Trurl Fax Registration.<BR><BR>Please proceed in accordance with Standard Operating Procedure and/or Space Law. You are fully trained to handle this situation without Central Command intervention.<BR><BR><i><small>This is an automatic message.</small>"
+		else if(stype == "Illegible fax")
+			tmsg += "Greetings, esteemed crewmember. Your fax has been <B><I>DECLINED</I></B> automatically by NAS Trurl Fax Registration.<BR><BR>Your fax's grammar, syntax and/or typography are of a sub-par level and do not allow us to understand the contents of the message.<BR><BR>Please consult your nearest dictionary and/or thesaurus and try again.<BR><BR><i><small>This is an automatic message.</small>"
+		else if(stype == "Fax not signed")
+			tmsg += "Greetings, esteemed crewmember. Your fax has been <B><I>DECLINED</I></B> automatically by NAS Trurl Fax Registration.<BR><BR>Your fax has not been correctly signed and, as such, we cannot verify your identity.<BR><BR>Please sign your faxes before sending them so that we may verify your identity.<BR><BR><i><small>This is an automatic message.</small>"
+		else if(stype == "Not Right Now")
+			tmsg += "Greetings, esteemed crewmember. Your fax has been <B><I>DECLINED</I></B> automatically by NAS Trurl Fax Registration.<BR><BR>Due to pressing concerns of a matter above your current paygrade, we are unable to provide assistance in whatever matter your fax referenced.<BR><BR>This can be either due to a power outage, bureaucratic audit, pest infestation, Ascendance Event, corgi outbreak, or any other situation that would affect the proper functioning of the NAS Trurl.<BR><BR>Please try again later.<BR><BR><i><small>This is an automatic message.</small>"
+		else if(stype == "You are wasting our time")
+			tmsg += "Greetings, esteemed crewmember. Your fax has been <B><I>DECLINED</I></B> automatically by NAS Trurl Fax Registration.<BR><BR>In the interest of preventing further mismanagement of company resources, please avoid wasting our time with such petty drivel.<BR><BR>Do kindly remember that we expect our workforce to maintain at least a semi-decent level of profesionalism. Do not test our patience.<BR><BR><i><small>This is an automatic message.</i></small>"
+		else if(stype == "Keep up the good work")
+			tmsg += "Greetings, esteemed crewmember. Your fax has been received successfully by NAS Trurl Fax Registration.<BR><BR>We at the NAS Trurl appreciate the good work that you have done here, and sincerely recommend that you continue such a display of dedication to the company.<BR><BR><i><small>This is absolutely not an automated message.</i></small>"
+		else if(stype == "ERT Instructions")
+			tmsg += "Greetings, esteemed crewmember. Your fax has been <B><I>DECLINED</I></B> automatically by NAS Trurl Fax Registration.<BR><BR>Please utilize the Card Swipers if you wish to call for an ERT.<BR><BR><i><small>This is an automated message.</i></small>"
 		else
 			return
 		tmsg += "</font>"
@@ -1854,7 +1899,7 @@
 
 			var/input = input(src.owner, "Please enter a reason for denying [key_name(H)]'s ERT request.","Outgoing message from CentComm", "")
 			if(!input)	return
-
+			ert_request_answered = 1
 			to_chat(src.owner, "You sent [input] to [H] via a secure channel.")
 			log_admin("[src.owner] denied [key_name(H)]'s ERT request with the message [input].")
 			to_chat(H, "You hear something crackle in your headset for a moment before a voice speaks.  \"Your ERT request has been denied for the following reasons: [input].  Message ends.\"")
@@ -1867,19 +1912,19 @@
 			return
 
 		var/obj/item/fax = locate(href_list["AdminFaxView"])
-		if (istype(fax, /obj/item/weapon/paper))
+		if(istype(fax, /obj/item/weapon/paper))
 			var/obj/item/weapon/paper/P = fax
 			P.show_content(usr,1)
-		else if (istype(fax, /obj/item/weapon/photo))
+		else if(istype(fax, /obj/item/weapon/photo))
 			var/obj/item/weapon/photo/H = fax
 			H.show(usr)
-		else if (istype(fax, /obj/item/weapon/paper_bundle))
+		else if(istype(fax, /obj/item/weapon/paper_bundle))
 			//having multiple people turning pages on a paper_bundle can cause issues
 			//open a browse window listing the contents instead
 			var/data = ""
 			var/obj/item/weapon/paper_bundle/B = fax
 
-			for (var/page = 1, page <= B.amount + 1, page++)
+			for(var/page = 1, page <= B.amount + 1, page++)
 				var/obj/pageobj = B.contents[page]
 				data += "<A href='?src=\ref[src];AdminFaxViewPage=[page];paper_bundle=\ref[B]'>Page [page] - [pageobj.name]</A><BR>"
 
@@ -1887,19 +1932,19 @@
 		else
 			to_chat(usr, "\red The faxed item is not viewable. This is probably a bug, and should be reported on the tracker: [fax.type]")
 
-	else if (href_list["AdminFaxViewPage"])
+	else if(href_list["AdminFaxViewPage"])
 		if(!check_rights(R_ADMIN))
 			return
 
 		var/page = text2num(href_list["AdminFaxViewPage"])
 		var/obj/item/weapon/paper_bundle/bundle = locate(href_list["paper_bundle"])
 
-		if (!bundle) return
+		if(!bundle) return
 
-		if (istype(bundle.contents[page], /obj/item/weapon/paper))
+		if(istype(bundle.contents[page], /obj/item/weapon/paper))
 			var/obj/item/weapon/paper/P = bundle.contents[page]
 			P.show_content(usr, 1)
-		else if (istype(bundle.contents[page], /obj/item/weapon/photo))
+		else if(istype(bundle.contents[page], /obj/item/weapon/photo))
 			var/obj/item/weapon/photo/H = bundle.contents[page]
 			H.show(usr)
 		return
@@ -2124,9 +2169,9 @@
 		var/atom/loc = usr.loc
 
 		var/dirty_paths
-		if (istext(href_list["object_list"]))
+		if(istext(href_list["object_list"]))
 			dirty_paths = list(href_list["object_list"])
-		else if (istype(href_list["object_list"], /list))
+		else if(istype(href_list["object_list"], /list))
 			dirty_paths = href_list["object_list"]
 
 		var/paths = list()
@@ -2155,27 +2200,27 @@
 		var/obj_dir = tmp_dir ? text2num(tmp_dir) : 2
 		if(!obj_dir || !(obj_dir in list(1,2,4,8,5,6,9,10)))
 			obj_dir = 2
-		var/obj_name = sanitize(href_list["object_name"])
+		var/obj_name = sanitize_local(href_list["object_name"])
 
 
 		var/atom/target //Where the object will be spawned
 		var/where = href_list["object_where"]
-		if (!( where in list("onfloor","inhand","inmarked") ))
+		if(!( where in list("onfloor","inhand","inmarked") ))
 			where = "onfloor"
 
 
 		switch(where)
 			if("inhand")
-				if (!iscarbon(usr) && !isrobot(usr))
+				if(!iscarbon(usr) && !isrobot(usr))
 					to_chat(usr, "Can only spawn in hand when you're a carbon mob or cyborg.")
 					where = "onfloor"
 				target = usr
 
 			if("onfloor")
 				switch(href_list["offset_type"])
-					if ("absolute")
+					if("absolute")
 						target = locate(0 + X,0 + Y,0 + Z)
-					if ("relative")
+					if("relative")
 						target = locate(loc.x + X,loc.y + Y,loc.z + Z)
 			if("inmarked")
 				if(!marked_datum)
@@ -2188,8 +2233,8 @@
 					target = marked_datum
 
 		if(target)
-			for (var/path in paths)
-				for (var/i = 0; i < number; i++)
+			for(var/path in paths)
+				for(var/i = 0; i < number; i++)
 					if(path in typesof(/turf))
 						var/turf/O = target
 						var/turf/N = O.ChangeTurf(path)
@@ -2217,7 +2262,7 @@
 										R.activate_module(I)
 										R.module.fix_modules()
 
-		if (number == 1)
+		if(number == 1)
 			log_admin("[key_name(usr)] created a [english_list(paths)]")
 			for(var/path in paths)
 				if(ispath(path, /mob))
@@ -2287,7 +2332,7 @@
 /*					for(var/obj/machinery/vehicle/pod/O in world)
 					for(var/mob/M in src)
 						M.loc = src.loc
-						if (M.client)
+						if(M.client)
 							M.client.perspective = MOB_PERSPECTIVE
 							M.client.eye = M
 					qdel(O)
@@ -2385,9 +2430,9 @@
 								continue
 								//don't strip organs
 							H.unEquip(W)
-							if (H.client)
+							if(H.client)
 								H.client.screen -= W
-							if (W)
+							if(W)
 								W.loc = H.loc
 								W.dropped(H)
 								W.layer = initial(W.layer)
@@ -2404,7 +2449,7 @@
 				if(!ticker)
 					alert("The game hasn't started yet!")
 					return
-				var/objective = sanitize(copytext(input("Enter an objective"),1,MAX_MESSAGE_LEN))
+				var/objective = sanitize_local(copytext(input("Enter an objective"),1,MAX_MESSAGE_LEN))
 				if(!objective)
 					return
 				feedback_inc("admin_secrets_fun_used",1)
@@ -2439,9 +2484,9 @@
 				feedback_add_details("admin_secrets_fun_used","BC")
 
 				var/newBombCap = input(usr,"What would you like the new bomb cap to be. (entered as the light damage range (the 3rd number in common (1,2,3) notation)) Must be between 4 and 128)", "New Bomb Cap", MAX_EX_LIGHT_RANGE) as num|null
-				if (newBombCap < 4)
+				if(newBombCap < 4)
 					return
-				if (newBombCap > 128)
+				if(newBombCap > 128)
 					newBombCap = 128
 
 				MAX_EX_DEVESTATION_RANGE = round(newBombCap/4)
@@ -2544,60 +2589,37 @@
 					L.fix()
 				message_admins("[key_name_admin(usr)] fixed all lights", 1)
 			if("floorlava")
-				if(floorIsLava)
-					to_chat(usr, "The floor is lava already.")
+				feedback_inc("admin_secrets_fun_used", 1)
+				feedback_add_details("admin_secrets_fun_used", "LF")
+				var/sure = alert(usr, "Are you sure you want to do this?", "Confirmation", "Yes", "No")
+				if(sure == "No")
 					return
-				feedback_inc("admin_secrets_fun_used",1)
-				feedback_add_details("admin_secrets_fun_used","LF")
-
-				//Options
-				var/length = input(usr, "How long will the lava last? (in seconds)", "Length", 180) as num
-				length = min(abs(length), 1200)
-
-				var/damage = input(usr, "How deadly will the lava be?", "Damage", 2) as num
-				damage = min(abs(damage), 100)
-
-				var/sure = alert(usr, "Are you sure you want to do this?", "Confirmation", "YES!", "Nah")
-				if(sure == "Nah")
+				weather_master.run_weather("the floor is lava")
+				message_admins("[key_name_admin(usr)] made the floor lava")
+			if("fakelava")
+				feedback_inc("admin_secrets_fun_used", 1)
+				feedback_add_details("admin_secrets_fun_used", "LZ")
+				var/sure = alert(usr, "Are you sure you want to do this?", "Confirmation", "Yes", "No")
+				if(sure == "No")
 					return
-				floorIsLava = 1
-
-				message_admins("[key_name_admin(usr)] made the floor LAVA! It'll last [length] seconds and it will deal [damage] damage to everyone.", 1)
-
-				for(var/turf/simulated/floor/F in world)
-					if((F.z in config.station_levels))
-						F.name = "lava"
-						F.desc = "The floor is LAVA!"
-						F.overlays += "lava"
-						F.lava = 1
-
-				spawn(0)
-					for(var/i = i, i < length, i++) // 180 = 3 minutes
-						if(damage)
-							for(var/mob/living/carbon/L in living_mob_list)
-								if(istype(L.loc, /turf/simulated/floor)) // Are they on LAVA?!
-									var/turf/simulated/floor/F = L.loc
-									if(F.lava)
-										var/safe = 0
-										for(var/obj/structure/O in F.contents)
-											if(O.level > F.level && !istype(O, /obj/structure/window)) // Something to stand on and it isn't under the floor!
-												safe = 1
-												break
-										if(!safe)
-											L.adjustFireLoss(damage)
-
-
-						sleep(10)
-
-					for(var/turf/simulated/floor/F in world) // Reset everything.
-						if((F.z in config.station_levels))
-							F.name = initial(F.name)
-							F.desc = initial(F.desc)
-							F.overlays.Cut()
-							F.lava = 0
-							F.update_icon()
-					floorIsLava = 0
-				return
+				weather_master.run_weather("fake lava")
+				message_admins("[key_name_admin(usr)] made aesthetic lava on the floor")
+			if("weatherashstorm")
+				feedback_inc("admin_secrets_fun_used", 1)
+				feedback_add_details("admin_secrets_fun_used", "WA")
+				var/sure = alert(usr, "Are you sure you want to do this?", "Confirmation", "Yes", "No")
+				if(sure == "No")
+					return
+				weather_master.run_weather("ash storm")
+				message_admins("[key_name_admin(usr)] spawned an ash storm on the mining asteroid")
+			if("weatherdarkness")
+				feedback_inc("admin_secrets_fun_used", 1)
+				feedback_add_details("admin_secrets_fun_used", "WD")
+				var/sure = alert(usr, "Are you sure you want to do this?", "Confirmation", "Yes", "No")
+				if(sure == "No")
+					return
+				weather_master.run_weather("advanced darkness")
+				message_admins("[key_name_admin(usr)] made the station go through advanced darkness")
 			if("retardify")
 				feedback_inc("admin_secrets_fun_used",1)
 				feedback_add_details("admin_secrets_fun_used","RET")
@@ -2728,7 +2750,7 @@
 
 		if(usr)
 			log_admin("[key_name(usr)] used secret [href_list["secretsfun"]]")
-			if (ok)
+			if(ok)
 				to_chat(world, text("<B>A secret has been activated by []!</B>", usr.key))
 
 	else if(href_list["secretsadmin"])
@@ -2768,7 +2790,7 @@
 			if("showgm")
 				if(!ticker)
 					alert("The game hasn't started yet!")
-				else if (ticker.mode)
+				else if(ticker.mode)
 					alert("The game mode is [ticker.mode.name]")
 				else alert("For some reason there's a ticker, but not a game mode")
 			if("manifest")
@@ -2803,9 +2825,9 @@
 				dat += "</table>"
 				usr << browse(dat, "window=fingerprints;size=440x410")
 			else
-		if (usr)
+		if(usr)
 			log_admin("[key_name(usr)] used secret [href_list["secretsadmin"]]")
-			if (ok)
+			if(ok)
 				to_chat(world, text("<B>A secret has been activated by []!</B>", usr.key))
 
 	else if(href_list["secretscoder"])
@@ -2821,12 +2843,12 @@
 				usr << browse(dat, "window=admin_log")
 			if("maint_access_brig")
 				for(var/obj/machinery/door/airlock/maintenance/M in world)
-					if (access_maint_tunnels in M.req_access)
+					if(access_maint_tunnels in M.req_access)
 						M.req_access = list(access_brig)
 				message_admins("[key_name_admin(usr)] made all maint doors brig access-only.")
 			if("maint_access_engiebrig")
 				for(var/obj/machinery/door/airlock/maintenance/M in world)
-					if (access_maint_tunnels in M.req_access)
+					if(access_maint_tunnels in M.req_access)
 						M.req_access = list()
 						M.req_one_access = list(access_brig,access_engine)
 				message_admins("[key_name_admin(usr)] made all maint doors engineering and brig access-only.")
@@ -2843,7 +2865,7 @@
 
 	else if(href_list["ac_set_channel_name"])
 		src.admincaster_feed_channel.channel_name = strip_html_simple(input(usr, "Provide a Feed Channel Name", "Network Channel Handler", ""))
-		while (findtext(src.admincaster_feed_channel.channel_name," ") == 1)
+		while(findtext(src.admincaster_feed_channel.channel_name," ") == 1)
 			src.admincaster_feed_channel.channel_name = copytext(src.admincaster_feed_channel.channel_name,2,lentext(src.admincaster_feed_channel.channel_name)+1)
 		src.access_news_network()
 
@@ -2882,7 +2904,7 @@
 
 	else if(href_list["ac_set_new_message"])
 		src.admincaster_feed_message.body = adminscrub(input(usr, "Write your Feed story", "Network Channel Handler", ""))
-		while (findtext(src.admincaster_feed_message.body," ") == 1)
+		while(findtext(src.admincaster_feed_message.body," ") == 1)
 			src.admincaster_feed_message.body = copytext(src.admincaster_feed_message.body,2,lentext(src.admincaster_feed_message.body)+1)
 		src.access_news_network()
 
@@ -2936,13 +2958,13 @@
 
 	else if(href_list["ac_set_wanted_name"])
 		src.admincaster_feed_message.author = adminscrub(input(usr, "Provide the name of the Wanted person", "Network Security Handler", ""))
-		while (findtext(src.admincaster_feed_message.author," ") == 1)
+		while(findtext(src.admincaster_feed_message.author," ") == 1)
 			src.admincaster_feed_message.author = copytext(admincaster_feed_message.author,2,lentext(admincaster_feed_message.author)+1)
 		src.access_news_network()
 
 	else if(href_list["ac_set_wanted_desc"])
 		src.admincaster_feed_message.body = adminscrub(input(usr, "Provide the a description of the Wanted person and any other details you deem important", "Network Security Handler", ""))
-		while (findtext(src.admincaster_feed_message.body," ") == 1)
+		while(findtext(src.admincaster_feed_message.body," ") == 1)
 			src.admincaster_feed_message.body = copytext(src.admincaster_feed_message.body,2,lentext(src.admincaster_feed_message.body)+1)
 		src.access_news_network()
 
@@ -3025,7 +3047,7 @@
 
 	else if(href_list["ac_setScreen"]) //Brings us to the main menu and resets all fields~
 		src.admincaster_screen = text2num(href_list["ac_setScreen"])
-		if (src.admincaster_screen == 0)
+		if(src.admincaster_screen == 0)
 			if(src.admincaster_feed_channel)
 				src.admincaster_feed_channel = new /datum/feed_channel
 			if(src.admincaster_feed_message)
@@ -3067,6 +3089,27 @@
 			error_viewer.showTo(usr, locate(href_list["viewruntime_backto"]), href_list["viewruntime_linear"])
 		else
 			error_viewer.showTo(usr, null, href_list["viewruntime_linear"])
+	else if(href_list["remove"])
+		var/ckeyname = href_list["remove"]
+		ckeyname = ckey(ckeyname)
+
+		bwhitelist_remove(ckeyname)
+		return
+
+
+	else if(href_list["addtowhitelist"])
+		var/ckeyname = href_list["ckeyname"]
+		ckeyname = ckey(ckeyname)
+
+		bwhitelist_save(ckeyname)
+		return
+
+	else if(href_list["whitelistsearchckey"])
+		var/playerckey = href_list["whitelistsearchckey"]
+
+		bwhitelist_panel(playerckey)
+		return
+
 
 /proc/admin_jump_link(var/atom/target, var/source)
 	if(!target) return
