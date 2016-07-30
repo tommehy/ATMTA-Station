@@ -17,7 +17,7 @@ var/list/forbidden_varedit_object_types = list(
 	set category = "Debug"
 	set name = "Edit Ticker Variables"
 
-	if (ticker == null)
+	if(ticker == null)
 		to_chat(src, "Game hasn't started yet.")
 	else
 		src.modify_variables(ticker)
@@ -308,7 +308,7 @@ var/list/forbidden_varedit_object_types = list(
 	else
 
 		var/list/names = list()
-		for (var/V in O.vars)
+		for(var/V in O.vars)
 			names += V
 
 		names = sortList(names)
@@ -328,7 +328,7 @@ var/list/forbidden_varedit_object_types = list(
 		if(default == "num")
 			dir = 1
 		else if(default == "icon")
-			var_value = "\icon[var_value]"
+			var_value = "[bicon(var_value)]"
 
 		to_chat(usr, "Variable contains: [var_value]")
 		if(dir)
@@ -347,7 +347,7 @@ var/list/forbidden_varedit_object_types = list(
 
 	var/original_name
 
-	if (!istype(O, /atom))
+	if(!istype(O, /atom))
 		original_name = "\ref[O] ([O])"
 	else
 		original_name = O:name
@@ -440,7 +440,7 @@ var/list/forbidden_varedit_object_types = list(
 
 	if(var_as_text == null)
 		var_as_text = "[O.vars[variable]]"
-	log_to_dd("### VarEdit by [src]: [O.type] [variable]=[html_encode("[var_as_text]")]")
+	log_to_dd("### VarEdit by [src]: [O.type] [variable]=[lhtml_encode("[var_as_text]")]")
 	log_admin("[key_name(src)] modified [original_name]'s [variable] to [var_as_text]")
 	message_admins("[key_name_admin(src)] modified [original_name]'s [variable] to [var_as_text]", 1)
 
@@ -465,7 +465,7 @@ var/list/forbidden_varedit_object_types = list(
 
 	else if(isicon(variable))
 		to_chat(usr, "Variable appears to be <b>ICON</b>.")
-		variable = "\icon[variable]"
+		variable = "[bicon(variable)]"
 		class = "icon"
 
 	else if(istype(variable,/matrix))

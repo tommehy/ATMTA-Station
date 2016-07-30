@@ -14,7 +14,11 @@ var/global/admin_ooc_colour = "#b82e00"
 		to_chat(src, "<span class='danger'>Guests may not use OOC.</span>")
 		return
 
-	msg = trim(sanitize(copytext(msg, 1, MAX_MESSAGE_LEN)))
+	if(!check_prisonlist(ckey(key)))
+		to_chat(src, "<span class='danger'>Not-whitelisted may not use OOC.</span>")
+		return
+
+	msg = trim(sanitize_local(copytext(msg, 1, MAX_MESSAGE_LEN)))
 	if(!msg)
 		return
 
@@ -63,7 +67,8 @@ var/global/admin_ooc_colour = "#b82e00"
 			var/display_name = src.key
 			if(prefs.unlock_content)
 				if(prefs.toggles & MEMBER_PUBLIC)
-					display_name = "<img style='width:9px;height:9px;' class=icon src=\ref['icons/member_content.dmi'] iconstate=blag>[display_name]"
+					var/icon/byond = icon('icons/member_content.dmi', "blag")
+					display_name = "[bicon(byond)][display_name]"
 			if(holder)
 				if(holder.fakekey)
 					if(C.holder)
@@ -74,7 +79,7 @@ var/global/admin_ooc_colour = "#b82e00"
 
 /proc/toggle_ooc()
 	config.ooc_allowed = ( !config.ooc_allowed )
-	if (config.ooc_allowed)
+	if(config.ooc_allowed)
 		to_chat(world, "<B>The OOC channel has been globally enabled!</B>")
 	else
 		to_chat(world, "<B>The OOC channel has been globally disabled!</B>")
@@ -149,7 +154,7 @@ var/global/admin_ooc_colour = "#b82e00"
 		to_chat(src, "<span class='danger'>Guests may not use OOC.</span>")
 		return
 
-	msg = trim(sanitize(copytext(msg, 1, MAX_MESSAGE_LEN)))
+	msg = trim(sanitize_local(copytext(msg, 1, MAX_MESSAGE_LEN)))
 	if(!msg)
 		return
 

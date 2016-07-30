@@ -97,7 +97,7 @@
 	..()
 
 /datum/game_mode/proc/greet_borer(var/datum/mind/borer, var/you_are=1)
-	if (you_are)
+	if(you_are)
 		to_chat(borer.current, "<B>\red You are a Cortical Borer!</B>")
 
 	var/obj_count = 1
@@ -115,13 +115,14 @@
 			continue
 		borers_alive++
 
-	if (borers_alive)
+	if(borers_alive)
 		return ..()
 	else
 		return 1
 
 /datum/game_mode/proc/auto_declare_completion_borer()
 	for(var/datum/mind/borer in borers)
+		var/karma_reward = 0
 		var/borerwin = 1
 		if((borer.current) && istype(borer.current,/mob/living/simple_animal/borer))
 			to_chat(world, "<B>The borer was [borer.current.key].</B>")
@@ -137,13 +138,15 @@
 					feedback_add_details("borer_objective","[objective.type]|FAIL")
 					borerwin = 0
 				count++
-
+				karma_reward = count - 1
 		else
 			borerwin = 0
 
 		if(borerwin)
 			to_chat(world, "<B>The borer was successful!<B>")
 			feedback_add_details("borer_success","SUCCESS")
+			sql_report_objective_karma(borer.current.key, karma_reward)
+			to_chat(world, "<b>[borer.current.key] got [karma_reward] karma points for completing objectives!</b>")
 		else
 			to_chat(world, "<B>The borer has failed!<B>")
 			feedback_add_details("borer_success","FAIL")

@@ -58,7 +58,7 @@
 	// and play
 	var/turf/source = get_turf(instrumentObj)
 	for(var/mob/M in hearers(15, source))
-		if(!M.client || !(M.client.prefs.toggles & SOUND_INSTRUMENTS))
+		if(!M.client || !(M.client.prefs.sound & SOUND_INSTRUMENTS))
 			continue
 		M.playsound_local(source, soundfile, 100, falloff = 5)
 
@@ -129,7 +129,7 @@
 		return
 
 	ui = nanomanager.try_update_ui(user, instrumentObj, ui_key, ui, data, force_open)
-	if (!ui)
+	if(!ui)
 		ui = new(user, instrumentObj, ui_key, "song.tmpl", instrumentObj.name, 700, 500)
 		ui.set_initial_data(data)
 		ui.open()
@@ -153,7 +153,7 @@
 		playing = 0
 		var/t = ""
 		do
-			t = html_encode(input(usr, "Please paste the entire song, formatted:", text("[]", name), t) as message)
+			t = lhtml_encode(input(usr, "Please paste the entire song, formatted:", text("[]", name), t) as message)
 			if(!in_range(instrumentObj, usr))
 				return
 
@@ -209,7 +209,7 @@
 		if(num < 1 || num > lines.len + 1)
 			return
 
-		var/newline = html_encode(input("Enter your line: ", instrumentObj.name) as text|null)
+		var/newline = lhtml_encode(input("Enter your line: ", instrumentObj.name) as text|null)
 		if(!newline || !in_range(instrumentObj, usr))
 			return
 		if(lines.len > 50)
@@ -227,7 +227,7 @@
 
 	else if(href_list["modifyline"])
 		var/num = round(text2num(href_list["modifyline"]))
-		var/content = html_encode(input("Enter your line: ", instrumentObj.name, lines[num]) as text|null)
+		var/content = lhtml_encode(input("Enter your line: ", instrumentObj.name, lines[num]) as text|null)
 		if(!content || !in_range(instrumentObj, usr))
 			return
 		if(lentext(content) > 50)
@@ -298,11 +298,11 @@
 	song.Topic(href, href_list)
 
 /obj/structure/piano/attackby(obj/item/O as obj, mob/user as mob, params)
-	if (istype(O, /obj/item/weapon/wrench))
-		if (!anchored && !isinspace())
+	if(istype(O, /obj/item/weapon/wrench))
+		if(!anchored && !isinspace())
 			playsound(src.loc, 'sound/items/Ratchet.ogg', 50, 1)
 			to_chat(user, "<span class='notice'> You begin to tighten \the [src] to the floor...</span>")
-			if (do_after(user, 20, target = src))
+			if(do_after(user, 20, target = src))
 				user.visible_message( \
 					"[user] tightens \the [src]'s casters.", \
 					"<span class='notice'> You have tightened \the [src]'s casters. Now it can be played again.</span>", \
@@ -311,7 +311,7 @@
 		else if(anchored)
 			playsound(src.loc, 'sound/items/Ratchet.ogg', 50, 1)
 			to_chat(user, "<span class='notice'> You begin to loosen \the [src]'s casters...</span>")
-			if (do_after(user, 40, target = src))
+			if(do_after(user, 40, target = src))
 				user.visible_message( \
 					"[user] loosens \the [src]'s casters.", \
 					"<span class='notice'> You have loosened \the [src]. Now it can be pulled somewhere else.</span>", \

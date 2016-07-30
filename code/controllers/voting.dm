@@ -200,7 +200,7 @@ datum/controller/vote
 						return 0
 					choices.Add(config.votable_modes)
 				if("crew_transfer")
-					if (check_rights(R_ADMIN|R_MOD))
+					if(check_rights(R_ADMIN|R_MOD))
 						if(ticker.current_state <= 2)
 							return 0
 						question = "End the shift?"
@@ -211,10 +211,10 @@ datum/controller/vote
 						question = "End the shift?"
 						choices.Add("Initiate Crew Transfer", "Continue The Round")
 				if("custom")
-					question = html_encode(input(usr,"What is the vote for?") as text|null)
+					question = lhtml_encode(input(usr,"What is the vote for?") as text|null)
 					if(!question)	return 0
 					for(var/i=1,i<=10,i++)
-						var/option = capitalize(html_encode(input(usr,"Please enter an option or hit cancel to finish") as text|null))
+						var/option = capitalize(lhtml_encode(input(usr,"Please enter an option or hit cancel to finish") as text|null))
 						if(!option || mode || !usr.client)	break
 						choices.Add(option)
 				else			return 0
@@ -229,11 +229,11 @@ datum/controller/vote
 			to_chat(world, "<font color='purple'><b>[text]</b>\nType vote to place your votes.\nYou have [config.vote_period/10] seconds to vote.</font>")
 			switch(vote_type)
 				if("crew_transfer")
-					to_chat(world, sound('sound/ambience/alarm4.ogg'))
+					world << sound('sound/ambience/alarm4.ogg')
 				if("gamemode")
-					to_chat(world, sound('sound/ambience/alarm4.ogg'))
+					world << sound('sound/ambience/alarm4.ogg')
 				if("custom")
-					to_chat(world, sound('sound/ambience/alarm4.ogg'))
+					world << sound('sound/ambience/alarm4.ogg')
 			if(mode == "gamemode" && going)
 				going = 0
 				to_chat(world, "<font color='red'><b>Round start has been delayed.</b></font>")

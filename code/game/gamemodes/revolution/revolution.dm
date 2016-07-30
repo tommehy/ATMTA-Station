@@ -42,7 +42,7 @@
 		restricted_jobs += protected_jobs
 
 
-	for (var/i=1 to max_headrevs)
+	for(var/i=1 to max_headrevs)
 		if(possible_revolutionaries.len==0)
 			break
 		var/datum/mind/lenin = pick(possible_revolutionaries)
@@ -107,7 +107,7 @@
 /datum/game_mode/proc/greet_revolutionary(datum/mind/rev_mind, you_are=1)
 	var/obj_count = 1
 	update_rev_icons_added(rev_mind)
-	if (you_are)
+	if(you_are)
 		to_chat(rev_mind.current, "<span class='userdanger'>You are a member of the revolutionaries' leadership!</span>")
 	for(var/datum/objective/objective in rev_mind.objectives)
 		to_chat(rev_mind.current, "<B>Objective #[obj_count]</B>: [objective.explanation_text]")
@@ -121,8 +121,8 @@
 	if(!istype(mob))
 		return
 
-	if (mob.mind)
-		if (mob.mind.assigned_role == "Clown")
+	if(mob.mind)
+		if(mob.mind.assigned_role == "Clown")
 			to_chat(mob, "Your training has allowed you to overcome your clownish nature, allowing you to wield weapons without harming yourself.")
 			mob.mutations.Remove(CLUMSY)
 
@@ -144,12 +144,12 @@
 
 	mob.update_icons()
 
-	if (!where2)
+	if(!where2)
 		to_chat(mob, "The Syndicate were unfortunately unable to get you a chameleon security HUD.")
 	else
-		to_chat(mob, "The chameleon security HUD in your [where2] will help you keep track of who is loyalty-implanted, and unable to be recruited.")
+		to_chat(mob, "The chameleon security HUD in your [where2] will help you keep track of who is mindshield-implanted, and unable to be recruited.")
 
-	if (!where)
+	if(!where)
 		to_chat(mob, "The Syndicate were unfortunately unable to get you a flash.")
 	else
 		to_chat(mob, "The flash in your [where] will help you to persuade the crew to join your cause.")
@@ -323,9 +323,18 @@
 //Announces the end of the game with all relavent information stated//
 //////////////////////////////////////////////////////////////////////
 /datum/game_mode/revolution/declare_completion()
+	var/karma_reward = 0
 	if(finished == 1)
 		feedback_set_details("round_end_result","win - heads killed")
 		to_chat(world, "<span class='redtext'>The heads of staff were killed or exiled! The revolutionaries win!</span>")
+		for(var/datum/mind/headrev in head_revolutionaries)
+			karma_reward = 3
+			to_chat(world, "[headrev.key] earned [karma_reward] karma points for being a Head of Revolution! Viva [headrev.key]!")
+			sql_report_objective_karma(headrev.key, karma_reward)
+		for(var/datum/mind/rev in revolutionaries)
+			karma_reward = 1
+			to_chat(world, "[rev.key] earned [karma_reward] karma point for being a part of Revolution!")
+			sql_report_objective_karma(rev.key, karma_reward)
 	else if(finished == 2)
 		feedback_set_details("round_end_result","loss - rev heads killed")
 		to_chat(world, "<span class='redtext'>The heads of staff managed to stop the revolution!</span>")
@@ -411,10 +420,10 @@
 	var/revcount = 0
 	var/loycount = 0
 	for(var/datum/mind/M in ticker.mode:head_revolutionaries)
-		if (M.current && M.current.stat != DEAD)
+		if(M.current && M.current.stat != DEAD)
 			foecount++
 	for(var/datum/mind/M in ticker.mode:revolutionaries)
-		if (M.current && M.current.stat != DEAD)
+		if(M.current && M.current.stat != DEAD)
 			revcount++
 	for(var/mob/living/carbon/human/player in world)
 		if(player.mind)

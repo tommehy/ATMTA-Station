@@ -36,7 +36,7 @@
 			playsound(loc, 'sound/machines/twobeep.ogg', 100, 1)
 
 	else if(istype(W, /obj/item/weapon/pen))
-		var/str = copytext(sanitize(input(user,"Label text?","Set label","")),1,MAX_NAME_LEN)
+		var/str = copytext(sanitize_local(input(user,"Label text?","Set label","")),1,MAX_NAME_LEN)
 		if(!str || !length(str))
 			to_chat(user, "<span class='notice'>Invalid text.</span>")
 			return
@@ -90,7 +90,7 @@
 			playsound(loc, 'sound/machines/twobeep.ogg', 100, 1)
 
 	else if(istype(W, /obj/item/weapon/pen))
-		var/str = copytext(sanitize(input(user,"Label text?","Set label","")),1,MAX_NAME_LEN)
+		var/str = copytext(sanitize_local(input(user,"Label text?","Set label","")),1,MAX_NAME_LEN)
 		if(!str || !length(str))
 			to_chat(user, "<span class='notice'>Invalid text.</span>")
 			return
@@ -204,10 +204,10 @@
 		var/dat = "<tt><center><h1><b>TagMaster 2.2</b></h1></center>"
 
 		dat += "<table style='width:100%; padding:4px;'><tr>"
-		for (var/i = 1, i <= TAGGERLOCATIONS.len, i++)
+		for(var/i = 1, i <= TAGGERLOCATIONS.len, i++)
 			dat += "<td><a href='?src=\ref[src];nextTag=[i]'>[TAGGERLOCATIONS[i]]</a></td>"
 
-			if (i%4==0)
+			if(i%4==0)
 				dat += "</tr><tr>"
 
 		dat += "</tr></table><br>Current Selection: [currTag ? TAGGERLOCATIONS[currTag] : "None"]</tt>"
@@ -279,7 +279,7 @@
 				O.sortTag = 1
 		for(var/obj/item/smallDelivery/O in src)
 			deliveryCheck = 1
-			if (O.sortTag == 0)
+			if(O.sortTag == 0)
 				O.sortTag = 1
 		if(deliveryCheck == 0)
 			H.destinationTag = 1
