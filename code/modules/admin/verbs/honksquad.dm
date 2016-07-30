@@ -19,7 +19,7 @@ var/global/sent_honksquad = 0
 
 	var/input = null
 	while(!input)
-		input = sanitize(copytext(input(src, "Please specify which mission the HONKsquad shall undertake.", "Specify Mission", ""),1,MAX_MESSAGE_LEN))
+		input = sanitize_local(copytext(input(src, "Please specify which mission the HONKsquad shall undertake.", "Specify Mission", ""),1,MAX_MESSAGE_LEN))
 		if(!input)
 			if(alert("Error, no mission set. Do you want to exit the setup process?",,"Yes","No")=="Yes")
 				return
@@ -59,7 +59,7 @@ var/global/sent_honksquad = 0
 				new_honksquad.key = pick(commandos)
 				commandos -= new_honksquad.key
 				new_honksquad.internal = new_honksquad.s_store
-				new_honksquad.internals.icon_state = "internal1"
+				new_honksquad.update_internals_hud_icon(1)
 
 			//So they don't forget their code or mission.
 			new_honksquad.mind.store_memory("<B>Mission:</B> \red [input].")

@@ -3,7 +3,7 @@
 	desc = "A device used to project your voice. Loudly."
 	icon_state = "megaphone"
 	item_state = "radio"
-	w_class = 1.0
+	w_class = 1
 	flags = CONDUCT
 
 	var/spamcheck = 0
@@ -35,7 +35,7 @@
 	var/message = input(user, "Shout a message:", "Megaphone") as text|null
 	if(!message)
 		return
-	message = sanitize(copytext(message, 1, MAX_MESSAGE_LEN))
+	message = sanitize_local(copytext(message, 1, MAX_MESSAGE_LEN))
 	if(!message)
 		return
 	message = capitalize(message)

@@ -7,7 +7,7 @@
 	desc = "Used to remotely scan objects and biomass for DNA and fingerprints. Can print a report of the findings."
 	icon = 'icons/goonstation/objects/objects.dmi'
 	icon_state = "detscanner"
-	w_class = 3.0
+	w_class = 3
 	item_state = "electronic"
 	flags = CONDUCT | NOBLUDGEON
 	slot_flags = SLOT_BELT
@@ -170,12 +170,18 @@
 				found_something = 1
 
 			// Blood
-			if(blood && blood.len)
-				sleep(30)
-				add_log("<span class='info'><B>Blood:</B></span>")
-				found_something = 1
-				for(var/B in blood)
-					add_log("Type: <font color='red'>[blood[B]]</font> DNA: <font color='red'>[B]</font>")
+			if (blood && blood.len)
+				if (istype(A,/obj/effect/decal/cleanable/cum))
+					user << "<span class='notice'>Sperm detected. Analysing...</span>"
+					sleep(30)
+					for(var/B in blood)
+						add_log(" DNA: <font color='red'>[B]</font>")
+				else
+					sleep(30)
+					add_log("<span class='info'><B>Blood:</B></span>")
+					found_something = 1
+					for(var/B in blood)
+						add_log("Type: <font color='red'>[blood[B]]</font> DNA: <font color='red'>[B]</font>")
 
 			//Fibers
 			if(fibers && fibers.len)

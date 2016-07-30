@@ -23,8 +23,6 @@
 
 	var/PathNode/PNode = null //associated PathNode in the A* algorithm
 
-	var/dynamic_lighting = 1
-
 	flags = 0
 
 	var/image/obscured	//camerachunks
@@ -156,46 +154,63 @@
 		qdel(L)
 
 //Creates a new turf
-/turf/proc/ChangeTurf(var/path)
-	if(!path)			return
-	if(path == type)	return src
+/turf/proc/ChangeTurf(path, defer_change = FALSE, keep_icon = TRUE)
+	if(!path)
+		return
+	if(!use_preloader && path == type) // Don't no-op if the map loader requires it to be reconstructed
+		return src
 	var/old_opacity = opacity
 	var/old_dynamic_lighting = dynamic_lighting
-	var/list/old_affecting_lights = affecting_lights
+	var/old_affecting_lights = affecting_lights
 	var/old_lighting_overlay = lighting_overlay
 	var/old_blueprint_data = blueprint_data
+	var/old_corners = corners
+
+	if(!lighting_corners_initialised && global.lighting_corners_initialised)
+		for(var/i = 1 to 4)
+			if(corners[i]) // Already have a corner on this direction.
+				continue
+
+			corners[i] = new/datum/lighting_corner(src, LIGHTING_CORNER_DIAGONAL[i])
 
 	if(air_master)
 		air_master.remove_from_active(src)
-
 	var/turf/W = new path(src)
+	if(!defer_change)
+		W.AfterChange()
 
-	if(istype(W, /turf/simulated))
-		W:Assimilate_Air()
-		W.RemoveLattice()
 	W.blueprint_data = old_blueprint_data
 
 	for(var/turf/space/S in range(W,1))
 		S.update_starlight()
 
 	lighting_overlay = old_lighting_overlay
-
+	corners = old_corners
 	affecting_lights = old_affecting_lights
 	if((old_opacity != opacity) || (dynamic_lighting != old_dynamic_lighting))
 		reconsider_lights()
 	if(dynamic_lighting != old_dynamic_lighting)
 		if(dynamic_lighting)
-			lighting_build_overlays()
+			lighting_build_overlay()
 		else
-			lighting_clear_overlays()
+			lighting_clear_overlay()
 
-	W.levelupdate()
-	W.CalculateAdjacentTurfs()
+	return W
 
-	if(!can_have_cabling())
+// I'm including `ignore_air` because BYOND lacks positional-only arguments
+/turf/proc/AfterChange(ignore_air, keep_cabling = FALSE) //called after a turf has been replaced in ChangeTurf()
+	levelupdate()
+	CalculateAdjacentTurfs()
+
+	if(!keep_cabling && !can_have_cabling())
 		for(var/obj/structure/cable/C in contents)
 			qdel(C)
-	return W
+
+/turf/simulated/AfterChange(ignore_air, keep_cabling = FALSE)
+	..()
+	RemoveLattice()
+	if(!ignore_air)
+		Assimilate_Air()
 
 //////Assimilate Air//////
 /turf/simulated/proc/Assimilate_Air()

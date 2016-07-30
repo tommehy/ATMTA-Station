@@ -20,6 +20,7 @@
 	return
 
 /obj/machinery/computer/teleporter/initialize()
+	..()
 	link_power_station()
 	update_icon()
 
@@ -82,7 +83,7 @@
 		data["accurate"] = null
 	data["regime"] = regime_set
 	var/area/targetarea = get_area(target)
-	data["target"] = (!target) ? "None" : sanitize(targetarea.name)
+	data["target"] = (!target) ? "None" : sanitize_local(targetarea.name)
 	data["calibrating"] = calibrating
 	data["locked"] = locked
 
@@ -294,6 +295,7 @@
 	RefreshParts()
 
 /obj/machinery/teleport/hub/initialize()
+	..()
 	link_power_station()
 
 /obj/machinery/teleport/hub/Destroy()
@@ -472,6 +474,7 @@
 	link_console_and_hub()
 
 /obj/machinery/teleport/station/initialize()
+	..()
 	link_console_and_hub()
 
 /obj/machinery/teleport/station/RefreshParts()

@@ -29,6 +29,7 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 	layer = 10
 	luminosity = 0
 	mouse_opacity = 0
+	invisibility = INVISIBILITY_LIGHTING
 	var/lightswitch = 1
 
 	var/eject = null
@@ -104,14 +105,14 @@ var/list/ghostteleportlocs = list()
 	name = "\improper Admin Room"
 	icon_state = "start"
 	requires_power = 0
-	lighting_use_dynamic = 0
+	dynamic_lighting = 0
 
 
 /area/adminconstruction
 	name = "\improper Admin Testing Area"
 	icon_state = "start"
 	requires_power = 0
-	lighting_use_dynamic = 0
+	dynamic_lighting = 0
 
 /area/space
 	icon_state = "space"
@@ -450,6 +451,11 @@ var/list/ghostteleportlocs = list()
 /area/shuttle/trade/sol
 	name = "Sol Freighter"
 
+/area/shuttle/uzhin
+	name = "Grisha's shuttle"
+	icon_state = "shuttle"
+	requires_power = 0
+
 /area/airtunnel1/      // referenced in airtunnel.dm:759
 
 /area/dummy/           // Referenced in engine.dm:261
@@ -459,7 +465,7 @@ var/list/ghostteleportlocs = list()
 	icon_state = "start"
 	requires_power = 0
 	luminosity = 1
-	lighting_use_dynamic = 0
+	dynamic_lighting = 0
 	has_gravity = 1
 
 // === end remove
@@ -475,7 +481,7 @@ var/list/ghostteleportlocs = list()
 	name = "\improper Centcom"
 	icon_state = "centcom"
 	requires_power = 0
-	lighting_use_dynamic = 0
+	dynamic_lighting = 0
 
 /area/centcom/control
 	name = "\improper Centcom Control"
@@ -551,7 +557,7 @@ var/list/ghostteleportlocs = list()
 	name = "\improper Thunderdome"
 	icon_state = "thunder"
 	requires_power = 0
-	lighting_use_dynamic = 0
+	dynamic_lighting = 0
 
 
 /area/tdome/arena_source
@@ -636,7 +642,7 @@ var/list/ghostteleportlocs = list()
 	icon_state = "yellow"
 	requires_power = 0
 	has_gravity = 1
-	lighting_use_dynamic = 0
+	dynamic_lighting = 0
 
 /area/wizard_station
 	name = "\improper Wizard's Den"
@@ -659,7 +665,7 @@ var/list/ghostteleportlocs = list()
 	name = "\improper Vox Base"
 	icon_state = "yellow"
 	requires_power = 0
-	lighting_use_dynamic = 0
+	dynamic_lighting = 0
 	no_teleportlocs = 1
 
 /area/vox_station/transit
@@ -1216,7 +1222,7 @@ var/list/ghostteleportlocs = list()
 /area/holodeck
 	name = "\improper Holodeck"
 	icon_state = "Holodeck"
-	lighting_use_dynamic = 0
+	dynamic_lighting = 0
 
 /area/holodeck/alphadeck
 	name = "\improper Holodeck Alpha"
@@ -1353,7 +1359,7 @@ var/list/ghostteleportlocs = list()
 
 /area/solar
 	requires_power = 0
-	lighting_use_dynamic = 0
+	dynamic_lighting = 0
 
 	auxport
 		name = "\improper Fore Port Solar Array"
@@ -1577,11 +1583,11 @@ var/list/ghostteleportlocs = list()
 
 /area/security/main
 	name = "\improper Security Office"
-	icon_state = "security"
+	icon_state = "securityoffice"
 
 /area/security/lobby
 	name = "\improper Security Lobby"
-	icon_state = "security"
+	icon_state = "securitylobby"
 
 /area/security/brig
 	name = "\improper Brig"
@@ -1597,7 +1603,7 @@ var/list/ghostteleportlocs = list()
 
 /area/security/permabrig
 	name = "\improper Prison Wing"
-	icon_state = "sec_prison"
+	icon_state = "sec_prison_perma"
 
 /area/security/prison
 	name = "\improper Prison Wing"
@@ -1617,11 +1623,11 @@ var/list/ghostteleportlocs = list()
 
 /area/security/prison/cell_block/A
 	name = "\improper Prison Cell Block A"
-	icon_state = "brig"
+	icon_state = "brigcella"
 
 /area/security/prison/cell_block/B
 	name = "\improper Prison Cell Block B"
-	icon_state = "brig"
+	icon_state = "brigcellb"
 
 /area/security/prison/cell_block/C
 	name = "\improper Prison Cell Block C"
@@ -1629,15 +1635,27 @@ var/list/ghostteleportlocs = list()
 
 /area/security/execution
 	name = "\improper Execution"
-	icon_state = "security"
+	icon_state = "execution"
 
 /area/security/processing
 	name = "\improper Prisoner Processing"
-	icon_state = "security"
+	icon_state = "prisonerprocessing"
 
 /area/security/interrogation
 	name = "\improper Interrogation"
-	icon_state = "security"
+	icon_state = "interrogation"
+
+/area/security/seceqstorage
+	name = "\improper Security Equipment Storage"
+	icon_state = "securityequipmentstorage"
+
+/area/security/interrogationhallway
+	name = "\improper Interrogation Hallway"
+	icon_state = "interrogationhall"
+
+/area/security/courtroomdandp
+	name = "\improper Courtroom Defense and Prosecution"
+	icon_state = "seccourt"
 
 /area/security/interrogationobs
 	name = "\improper Interrogation Observation"
@@ -1645,11 +1663,11 @@ var/list/ghostteleportlocs = list()
 
 /area/security/evidence
 	name = "\improper Evidence Room"
-	icon_state = "security"
+	icon_state = "evidence"
 
 /area/security/prisonlockers
 	name = "\improper Prisoner Lockers"
-	icon_state = "sec_prison"
+	icon_state = "sec_prison_lockers"
 
 /area/security/medbay
 	name = "\improper Security Medbay"
@@ -1665,11 +1683,11 @@ var/list/ghostteleportlocs = list()
 
 /area/security/armoury
 	name = "\improper Armory"
-	icon_state = "Warden"
+	icon_state = "armory"
 
 /area/security/securearmoury
 	name = "\improper Secure Armory"
-	icon_state = "Warden"
+	icon_state = "secarmory"
 
 /area/security/armoury/gamma
 	name = "\improper Gamma Armory"
@@ -1678,7 +1696,7 @@ var/list/ghostteleportlocs = list()
 
 /area/security/securehallway
 	name = "\improper Security Secure Hallway"
-	icon_state = "security"
+	icon_state = "securehall"
 
 /area/security/hos
 	name = "\improper Head of Security's Office"
@@ -1686,7 +1704,7 @@ var/list/ghostteleportlocs = list()
 
 area/security/podbay
 	name = "\improper Security Podbay"
-	icon_state = "security"
+	icon_state = "securitypodbay"
 
 /area/security/detectives_office
 	name = "\improper Detective's Office"
@@ -2248,25 +2266,25 @@ area/security/podbay
 	name = "\improper AI Sat Ext"
 	icon_state = "storage"
 	luminosity = 1
-	lighting_use_dynamic = 0
+	dynamic_lighting = 0
 
 /area/turret_protected/AIsatextFS
 	name = "\improper AI Sat Ext"
 	icon_state = "storage"
 	luminosity = 1
-	lighting_use_dynamic = 0
+	dynamic_lighting = 0
 
 /area/turret_protected/AIsatextAS
 	name = "\improper AI Sat Ext"
 	icon_state = "storage"
 	luminosity = 1
-	lighting_use_dynamic = 0
+	dynamic_lighting = 0
 
 /area/turret_protected/AIsatextAP
 	name = "\improper AI Sat Ext"
 	icon_state = "storage"
 	luminosity = 1
-	lighting_use_dynamic = 0
+	dynamic_lighting = 0
 
 /area/turret_protected/NewAIMain
 	name = "\improper AI Main New"
@@ -2443,7 +2461,7 @@ area/security/podbay
 	name = "Beach"
 	icon_state = "beach"
 	luminosity = 1
-	lighting_use_dynamic = 0
+	dynamic_lighting = 0
 	requires_power = 0
 	ambientsounds = list('sound/ambience/shore.ogg', 'sound/ambience/seag1.ogg','sound/ambience/seag2.ogg','sound/ambience/seag2.ogg')
 
@@ -2451,6 +2469,11 @@ area/security/podbay
 	name = "Undersea"
 	icon_state = "undersea"
 
+/area/awaymission/uzhin
+	name = "Shesterochka"
+	requires_power = 0
+	ambientsounds = 'sound/music/uzhin.ogg'
+	icon_state = "uzhin"
 
 ////////////////////////AWAY AREAS///////////////////////////////////
 
@@ -2619,4 +2642,3 @@ var/list/the_station_areas = list (
 	/area/turret_protected/ai_upload_foyer,
 	/area/turret_protected/ai,
 )
-

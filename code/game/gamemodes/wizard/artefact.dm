@@ -7,7 +7,7 @@
 	icon_state ="scroll2"
 	throw_speed = 1
 	throw_range = 5
-	w_class = 1.0
+	w_class = 1
 	var/used = 0
 
 
@@ -59,21 +59,21 @@
 				to_chat(M, "<B>You are the [H.real_name]'s apprentice! You are bound by magic contract to follow their orders and help them in accomplishing their goals.")
 				switch(href_list["school"])
 					if("destruction")
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/projectile/magic_missile(M))
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/dumbfire/fireball(M))
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/projectile/magic_missile(null))
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/dumbfire/fireball(null))
 						to_chat(M, "<B>Your service has not gone unrewarded, however. Studying under [H.real_name], you have learned powerful, destructive spells. You are able to cast magic missile and fireball.")
 					if("bluespace")
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/area_teleport/teleport(M))
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/ethereal_jaunt(M))
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/area_teleport/teleport(null))
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/ethereal_jaunt(null))
 						to_chat(M, "<B>Your service has not gone unrewarded, however. Studying under [H.real_name], you have learned reality bending mobility spells. You are able to cast teleport and ethereal jaunt.")
 					if("healing")
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/charge(M))
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/aoe_turf/conjure/forcewall(M))
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/charge(null))
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/aoe_turf/conjure/forcewall(null))
 						M.equip_to_slot_or_del(new /obj/item/weapon/gun/magic/staff/healing(M), slot_r_hand)
 						to_chat(M, "<B>Your service has not gone unrewarded, however. Studying under [H.real_name], you have learned livesaving survival spells. You are able to cast charge and forcewall.")
 					if("robeless")
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/aoe_turf/knock(M))
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/mind_transfer(M))
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/aoe_turf/knock(null))
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/mind_transfer(null))
 						to_chat(M, "<B>Your service has not gone unrewarded, however. Studying under [H.real_name], you have learned stealthy, robeless spells. You are able to cast knock and mindswap.")
 
 				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
@@ -87,7 +87,7 @@
 				var/wizard_name_first = pick(wizard_first)
 				var/wizard_name_second = pick(wizard_second)
 				var/randomname = "[wizard_name_first] [wizard_name_second]"
-				var/newname = sanitize(copytext(input(M, "You are the wizard's apprentice. Would you like to change your name to something else?", "Name change", randomname) as null|text,1,MAX_NAME_LEN))
+				var/newname = sanitize_local(copytext(input(M, "You are the wizard's apprentice. Would you like to change your name to something else?", "Name change", randomname) as null|text,1,MAX_NAME_LEN))
 
 				if(!newname)
 					newname = randomname
@@ -493,8 +493,7 @@ var/global/list/multiverse = list()
 				M.equip_to_slot_or_del(sword, slot_r_hand)
 
 			if("cultist")
-				M.equip_to_slot_or_del(new /obj/item/clothing/head/culthood/alt(M), slot_head)
-				M.equip_to_slot_or_del(new /obj/item/clothing/suit/cultrobes/alt(M), slot_wear_suit)
+				M.equip_to_slot_or_del(new /obj/item/clothing/suit/hooded/cultrobes/alt(M), slot_wear_suit)
 				M.equip_to_slot_or_del(new /obj/item/clothing/shoes/cult(M), slot_shoes)
 				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
 				M.equip_to_slot_or_del(sword, slot_r_hand)
@@ -783,7 +782,7 @@ var/global/list/multiverse = list()
 		else if(istype(I,/obj/item/weapon/bikehorn))
 			to_chat(target, "<span class='userdanger'>HONK</span>")
 			target << 'sound/items/AirHorn.ogg'
-			target.ear_damage += rand(0,3)
+			target.adjustEarDamage(0,3)
 			GiveHint(target)
 		cooldown = world.time +cooldown_time
 		return
@@ -813,7 +812,7 @@ var/global/list/multiverse = list()
 	if(target && cooldown < world.time)
 		switch(user.zone_sel.selecting)
 			if("mouth")
-				var/wgw =  sanitize(input(user, "What would you like the victim to say", "Voodoo", null)  as text)
+				var/wgw =  sanitize_local(input(user, "What would you like the victim to say", "Voodoo", null)  as text)
 				target.say(wgw)
 				log_game("[user][user.key] made [target][target.key] say [wgw] with a voodoo doll.")
 			if("eyes")

@@ -31,7 +31,7 @@ var/list/potential_theft_objectives=subtypesof(/datum/theft_objective) \
 	proc/find_target()
 		var/list/possible_targets = list()
 		for(var/datum/mind/possible_target in ticker.minds)
-			if(possible_target != owner && ishuman(possible_target.current) && (possible_target.current.stat != DEAD))
+			if(possible_target != owner && ishuman(possible_target.current) && (possible_target.current.stat != DEAD) && possible_target.current.client)
 				possible_targets += possible_target
 		if(possible_targets.len > 0)
 			target = pick(possible_targets)
@@ -39,7 +39,7 @@ var/list/potential_theft_objectives=subtypesof(/datum/theft_objective) \
 	proc/find_target_by_role(role, role_type=0)//Option sets either to check assigned role or special role. Default to assigned.
 		var/list/possible_targets = list()
 		for(var/datum/mind/possible_target in ticker.minds)
-			if((possible_target != owner) && ishuman(possible_target.current) && ((role_type ? possible_target.special_role : possible_target.assigned_role) == role) && (possible_target.current.stat != DEAD) )
+			if((possible_target != owner) && ishuman(possible_target.current) && ((role_type ? possible_target.special_role : possible_target.assigned_role) == role) && (possible_target.current.stat != DEAD) && possible_target.current.client)
 				possible_targets += possible_target
 		if(possible_targets.len > 0)
 			target = pick(possible_targets)
@@ -48,7 +48,7 @@ var/list/potential_theft_objectives=subtypesof(/datum/theft_objective) \
 	proc/find_target_with_special_role(role)
 		var/list/possible_targets = list()
 		for(var/datum/mind/possible_target in ticker.minds)
-			if((possible_target != owner) && ishuman(possible_target.current) && (role && possible_target.special_role == role || !role && possible_target.special_role) && (possible_target.current.stat != DEAD) )
+			if((possible_target != owner) && ishuman(possible_target.current) && (role && possible_target.special_role == role || !role && possible_target.special_role) && (possible_target.current.stat != DEAD) && possible_target.current.client)
 				possible_targets += possible_target
 		if(possible_targets.len > 0)
 			target = pick(possible_targets)
@@ -376,7 +376,7 @@ var/list/potential_theft_objectives=subtypesof(/datum/theft_objective) \
 	find_target()
 		var/list/possible_targets = list() //Copypasta because NO_SCAN races, yay for snowflakes.
 		for(var/datum/mind/possible_target in ticker.minds)
-			if(possible_target != owner && ishuman(possible_target.current) && (possible_target.current.stat != DEAD))
+			if(possible_target != owner && ishuman(possible_target.current) && (possible_target.current.stat != DEAD) && possible_target.current.client)
 				var/mob/living/carbon/human/H = possible_target.current
 				if(!(H.species.flags & NO_SCAN))
 					possible_targets += possible_target
@@ -465,7 +465,7 @@ var/list/potential_theft_objectives=subtypesof(/datum/theft_objective) \
 			var/tmp_obj = new O.typepath
 			var/custom_name = tmp_obj:name
 			qdel(tmp_obj)
-			O.name = sanitize(copytext(input("Enter target name:", "Objective target", custom_name) as text|null,1,MAX_NAME_LEN))
+			O.name = sanitize_local(copytext(input("Enter target name:", "Objective target", custom_name) as text|null,1,MAX_NAME_LEN))
 			if(!O.name) return
 			steal_target = O
 			explanation_text = "Steal [O.name]."
@@ -846,3 +846,9 @@ var/list/potential_theft_objectives=subtypesof(/datum/theft_objective) \
 			target_amount = 6
 			itemname = "six flashes"
 	explanation_text = "We are running low on spare parts. Trade for [itemname]."
+
+//wizard
+
+/datum/objective/wizchaos
+	explanation_text = "Wreak havoc upon the station as much you can. Send those wandless Nanotrasen scum a message!"
+	completed = 1

@@ -129,7 +129,7 @@
 		light_color = LIGHT_COLOR_WHITE
 
 /obj/spacepod/bullet_act(var/obj/item/projectile/P)
-	if(P.damage && !P.nodamage)
+	if(P.damage_type == BRUTE || P.damage_type == BURN)
 		deal_damage(P.damage)
 	else if(P.flag == "energy" && istype(P,/obj/item/projectile/ion)) //needed to make sure ions work properly
 		empulse(src, 1, 1)
@@ -378,19 +378,49 @@
 		if(istype(W, /obj/item/device/spacepod_equipment/sec_cargo))
 			add_equipment(user, W, "sec_cargo_system")
 			return
-		if(istype(W, /obj/item/device/spacepod_equipment/lock))
-			add_equipment(user, W, "lock_system")
+		if(istype(W, /obj/item/weapon/stock_parts/cell))
+			if(!hatch_open)
+				to_chat(user, "\red The maintenance hatch is closed!")
+				return
+			if(battery)
+				to_chat(user, "<span class='notice'>The pod already has a battery.</span>")
+				return
+			user.drop_item(W)
+			battery = W
+			W.forceMove(src)
 			return
+		if(istype(W, /obj/item/device/spacepod_equipment))
+			if(!hatch_open)
+				to_chat(user, "\red The maintenance hatch is closed!")
+				return
+			if(!equipment_system)
+				to_chat(user, "<span class='warning'>The pod has no equipment datum, yell at the coders</span>")
+				return
+			if(istype(W, /obj/item/device/spacepod_equipment/weaponry))
+				add_equipment(user, W, "weapon_system")
+				return
+			if(istype(W, /obj/item/device/spacepod_equipment/misc))
+				add_equipment(user, W, "misc_system")
+				return
+			if(istype(W, /obj/item/device/spacepod_equipment/cargo))
+				add_equipment(user, W, "cargo_system")
+				return
+			if(istype(W, /obj/item/device/spacepod_equipment/sec_cargo))
+				add_equipment(user, W, "sec_cargo_system")
+				return
+			if(istype(W, /obj/item/device/spacepod_equipment/lock))
+				add_equipment(user, W, "lock_system")
+				return
 
-	if(istype(W, /obj/item/device/spacepod_key) && istype(equipment_system.lock_system, /obj/item/device/spacepod_equipment/lock/keyed))
-		var/obj/item/device/spacepod_key/key = W
-		if(key.id == equipment_system.lock_system.id)
-			lock_pod()
-			return
-		else
-			to_chat(user, "<span class='warning'>This is the wrong key!</span>")
-			return
-
+		if(istype(W, /obj/item/device/spacepod_key) && istype(equipment_system.lock_system, /obj/item/device/spacepod_equipment/lock/keyed))
+			var/obj/item/device/spacepod_key/key = W
+			if(key.id == equipment_system.lock_system.id)
+				lock_pod()
+				return
+			else
+				to_chat(user, "<span class='warning'>This is the wrong key!</span>")
+				return
+				
 	if(istype(W, /obj/item/weapon/weldingtool))
 		if(!hatch_open)
 			to_chat(user, "\red You must open the maintenance hatch before attempting repairs.")
@@ -407,28 +437,26 @@
 				repair_damage(10)
 				to_chat(user, "\blue You mend some [pick("dents","bumps","damage")] with \the [WT]")
 			return
-		to_chat(user, "\blue <b>\The [src] is fully repaired!</b>")
-		return
 
-	if(istype(W, /obj/item/device/lock_buster))
-		var/obj/item/device/lock_buster/L = W
-		if(L.on && equipment_system.lock_system)
-			user.visible_message(user, "<span class='warning'>[user] is drilling through the [src]'s lock!</span>",
-				"<span class='notice'>You start drilling through the [src]'s lock!</span>")
-			if(do_after(user, 100, target = src))
-				qdel(equipment_system.lock_system)
-				equipment_system.lock_system = null
-				user.visible_message(user, "<span class='warning'>[user] has destroyed the [src]'s lock!</span>",
-					"<span class='notice'>You destroy the [src]'s lock!</span>")
-			else
-				user.visible_message(user, "<span class='warning'>[user] fails to break through the [src]'s lock!</span>",
-				"<span class='notice'>You were unable to break through the [src]'s lock!</span>")
+		if(istype(W, /obj/item/device/lock_buster))
+			var/obj/item/device/lock_buster/L = W
+			if(L.on && equipment_system.lock_system)
+				user.visible_message(user, "<span class='warning'>[user] is drilling through the [src]'s lock!</span>",
+					"<span class='notice'>You start drilling through the [src]'s lock!</span>")
+				if(do_after(user, 100, target = src))
+					qdel(equipment_system.lock_system)
+					equipment_system.lock_system = null
+					user.visible_message(user, "<span class='warning'>[user] has destroyed the [src]'s lock!</span>",
+						"<span class='notice'>You destroy the [src]'s lock!</span>")
+				else
+					user.visible_message(user, "<span class='warning'>[user] fails to break through the [src]'s lock!</span>",
+					"<span class='notice'>You were unable to break through the [src]'s lock!</span>")
+				return
+			to_chat(user, "<span class='notice'>Turn the [L] on first.</span>")
 			return
-		to_chat(user, "<span class='notice'>Turn the [L] on first.</span>")
-		return
 
-	if(cargo_hold.storage_slots > 0 && !hatch_open && unlocked) // must be the last option as all items not listed prior will be stored
-		cargo_hold.attackby(W, user, params)
+		if(cargo_hold.storage_slots > 0 && !hatch_open && unlocked) // must be the last option as all items not listed prior will be stored
+			cargo_hold.attackby(W, user, params)
 
 obj/spacepod/proc/add_equipment(mob/user, var/obj/item/device/spacepod_equipment/SPE, var/slot)
 	if(equipment_system.vars[slot])
@@ -460,7 +488,10 @@ obj/spacepod/proc/add_equipment(mob/user, var/obj/item/device/spacepod_equipment
 			if(do_after(user, 50, target = src))
 				target.forceMove(get_turf(src))
 				target.Stun(1)
-				passengers -= target
+				if(pilot)
+					pilot = null
+				else
+					passengers -= target
 				target.visible_message("<span class='warning'>[user] flings the door open and tears [target] out of the [src]</span>",
 					"<span class='warning'>The door flies open and you are thrown out of the [src] and to the ground!</span>")
 				return
