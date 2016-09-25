@@ -19,12 +19,11 @@ mob
 	var/datum/hSB/sandbox = null
 	proc
 		CanBuild()
-			if(master_mode == "sandbox")
-				sandbox = new/datum/hSB
-				sandbox.owner = src.ckey
-				if(src.client.holder)
-					sandbox.admin = 1
-				verbs += new/mob/proc/sandbox_panel
+			sandbox = new/datum/hSB
+			sandbox.owner = src.ckey
+			if(src.client.holder)
+				sandbox.admin = 1
+			verbs += new/mob/proc/sandbox_panel
 		sandbox_panel()
 			if(sandbox)
 				sandbox.update()
@@ -145,10 +144,6 @@ datum/hSB
 						if(istype(O, /obj/item/assembly))
 							continue
 						if(istype(O, /obj/item/device/camera))
-							continue
-						if(istype(O, /obj/item/weapon/cloaking_device))
-							continue
-						if(istype(O, /obj/item/weapon/dummy))
 							continue
 						if(istype(O, /obj/item/weapon/melee/energy/sword/saber))
 							continue
