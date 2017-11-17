@@ -1,164 +1,189 @@
 var/list/GPS_list = list()
+var/list/SPS_list = list()
+
 /obj/item/device/gps
 	name = "global positioning system"
 	desc = "Helping lost spacemen find their way through the planets since 2016."
 	icon = 'icons/obj/telescience.dmi'
 	icon_state = "gps-c"
-	w_class = WEIGHT_CLASS_SMALL
+	w_class = W_CLASS_SMALL
+	flags = FPRINT
 	slot_flags = SLOT_BELT
-	origin_tech = "materials=2;magnets=1;bluespace=2"
+	origin_tech = Tc_BLUESPACE + "=2;" + Tc_MAGNETS + "=2"
+	var/base_name = "global positioning system"
+	var/base_tag = "COM"
 	var/gpstag = "COM0"
-	var/emped = 0
-	var/turf/locked_location
-	var/tracking = TRUE
+	var/emped = FALSE
+	var/autorefreshing = FALSE
+
+/obj/item/device/gps/proc/gen_id()
+	return GPS_list.len
+
+/obj/item/device/gps/proc/get_list()
+	return GPS_list.Copy()
+
+/obj/item/device/gps/proc/update_name()
+	name = "[base_name] ([gpstag])"
 
 /obj/item/device/gps/New()
 	..()
+	gpstag = "[base_tag][gen_id()]"
+	update_name()
+	overlays += image(icon = icon, icon_state = "working")
+	handle_list()
+
+/obj/item/device/gps/proc/handle_list()
 	GPS_list.Add(src)
-	name = "global positioning system ([gpstag])"
-	overlays += "working"
 
 /obj/item/device/gps/Destroy()
-	GPS_list.Remove(src)
-	return ..()
+	if(istype(src,/obj/item/device/gps/secure))
+		SPS_list.Remove(src)
+	else
+		GPS_list.Remove(src)
+	..()
 
 /obj/item/device/gps/emp_act(severity)
 	emped = 1
-	overlays -= "working"
-	overlays += "emp"
-	addtimer(src, "reboot", 300)
+	overlays -= image(icon = icon, icon_state = "working")
+	overlays += image(icon = icon, icon_state = "emp")
+	spawn(30 SECONDS)
+		emped = 0
+		overlays -= image(icon = icon, icon_state = "emp")
+		overlays += image(icon = icon, icon_state = "working")
 
-/obj/item/device/gps/proc/reboot()
-	emped = FALSE
-	overlays -= "emp"
-	overlays += "working"
+/obj/item/device/gps/attack_self(mob/user)
+	ui_interact(user)
 
-/obj/item/device/gps/AltClick(mob/user)
-	if(CanUseTopic(user, inventory_state) != STATUS_INTERACTIVE)
-		return 1 //user not valid to use gps
-	if(emped)
-		to_chat(user, "<span class='warning'>It's busted!</span>")
-	if(tracking)
-		overlays -= "working"
-		to_chat(user, "[src] is no longer tracking, or visible to other GPS devices.")
-		tracking = FALSE
+/obj/item/device/gps/examine(mob/user)
+	if (Adjacent(user) || isobserver(user))
+		src.attack_self(user)
 	else
-		overlays += "working"
-		to_chat(user, "[src] is now tracking, and visible to other GPS devices.")
-		tracking = TRUE
+		..()
 
-/obj/item/device/gps/attack_self(mob/user as mob)
-	if(!tracking)
-		to_chat(user, "<span class='warning'>[src] is turned off. Use alt+click to toggle it back on.</span>")
-		return
-
-	var/obj/item/device/gps/t = ""
-	var/gps_window_height = 110 + GPS_list.len * 20 // Variable window height, depending on how many GPS units there are to show
+/obj/item/device/gps/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open=NANOUI_FOCUS)
+	var/data[0]
 	if(emped)
-		t += "ERROR"
+		data["emped"] = TRUE
 	else
-		t += "<BR><A href='?src=[UID()];tag=1'>Set Tag</A> "
-		t += "<BR>Tag: [gpstag]"
-		if(locked_location && locked_location.loc)
-			t += "<BR>Bluespace coordinates saved: [locked_location.loc]"
-			gps_window_height += 20
-
-		for(var/obj/item/device/gps/G in GPS_list)
-			var/turf/pos = get_turf(G)
-			var/area/gps_area = get_area(G)
-			var/tracked_gpstag = G.gpstag
-			if(G.emped == 1)
-				t += "<BR>[tracked_gpstag]: ERROR"
-			else if(G.tracking)
-				t += "<BR>[tracked_gpstag]: [format_text(gps_area.name)] ([pos.x], [pos.y], [pos.z])"
+		data["gpstag"] = gpstag
+		data["autorefresh"] = autorefreshing
+		var/list/devices = list()
+		for(var/D in get_list())
+			var/device_data[0]
+			var/turf/device_turf = get_turf(D)
+			var/area/device_area = get_area(D)
+			var/device_tag = null
+			var/device_rip = null
+			if(ispAI(D))
+				var/mob/living/silicon/pai/P = D
+				device_tag = P.ppstag
+				device_rip = P.silence_time
 			else
-				continue
+				var/obj/item/device/gps/G = D
+				device_tag = G.gpstag
+				device_rip = G.emped
+			device_data["tag"] = device_tag
+			if(device_rip)
+				device_data["location_text"] = "ERROR"
+			else if(!device_turf || !device_area)
+				device_data["location_text"] = "UNKNOWN"
+			else if(device_turf.z > WORLD_X_OFFSET.len)
+				device_data["location_text"] = "[format_text(device_area.name)] (UNKNOWN, UNKNOWN, UNKNOWN)"
+			else
+				device_data["location_text"] = "[format_text(device_area.name)] ([device_turf.x-WORLD_X_OFFSET[device_turf.z]], [device_turf.y-WORLD_Y_OFFSET[device_turf.z]], [device_turf.z])"
+			devices += list(device_data)
+		data["devices"] = devices
 
-	var/datum/browser/popup = new(user, "GPS", name, 360, min(gps_window_height, 800))
-	popup.set_content(t)
-	popup.set_title_image(user.browse_rsc_icon(src.icon, src.icon_state))
-	popup.open()
+	ui = nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	if(!ui)
+		ui = new(user, src, ui_key, "gps.tmpl", "[src]", 530, 600)
+		ui.set_initial_data(data)
+		ui.open()
+	ui.set_auto_update(autorefreshing)
 
 /obj/item/device/gps/Topic(href, href_list)
-	if(..(state = inventory_state))
-		return 1
+	if(..())
+		return 0
 
-	if(href_list["tag"] )
-		var/a = input("Please enter desired tag.", name, gpstag) as text|null
-		if(!a || ..(state = inventory_state))
+	if(href_list["tag"])
+		if (isobserver(usr))
+			to_chat(usr, "No way.")
+			return 0
+		if (usr.get_active_hand() != src || usr.stat) //no silicons allowed
+			to_chat(usr, "<span class = 'caution'>You need to have the GPS in your hand to do that!</span>")
 			return 1
-		a = uppertext(sanitize(copytext(a, 1, 5)))
-		if(src.loc == usr)
+
+		var/a = input("Please enter desired tag.", name, gpstag) as text|null
+		if (!a) //what a check
+			return 1
+
+		if (usr.get_active_hand() != src || usr.stat) //second check in case some chucklefuck drops the GPS while typing the tag
+			to_chat(usr, "<span class = 'caution'>The GPS needs to be kept in your active hand!</span>")
+			return 1
+		a = strict_ascii(a)
+		if(length(a) < 4 || length(a) > 5)
+			to_chat(usr, "<span class = 'caution'>The tag must be between four and five characters long!</span>")
+		else
 			gpstag = a
-			name = "global positioning system ([gpstag])"
-			attack_self(usr)
+			update_name()
+		return 1
+	if(href_list["toggle_refresh"])
+		autorefreshing = !autorefreshing
+		return 1
 
 /obj/item/device/gps/science
 	icon_state = "gps-s"
-	gpstag = "SCI0"
+	base_tag = "SCI"
 
 /obj/item/device/gps/engineering
 	icon_state = "gps-e"
-	gpstag = "ENG0"
+	base_tag = "ENG"
+
+/obj/item/device/gps/paramedic
+	icon_state = "gps-p"
+	base_tag = "PMD"
 
 /obj/item/device/gps/mining
+	desc = "A more rugged looking GPS device. Useful for finding miners. Or their corpses."
 	icon_state = "gps-m"
-	gpstag = "MINE0"
-	desc = "A positioning system helpful for rescuing trapped or injured miners, keeping one on you at all times while mining might just save your life."
+	base_tag = "MIN"
 
-/obj/item/device/gps/cyborg
-	icon_state = "gps-b"
-	gpstag = "BORG0"
-	desc = "A mining cyborg internal positioning system. Used as a recovery beacon for damaged cyborg assets, or a collaboration tool for mining teams."
-	flags = NODROP
+/obj/item/device/gps/secure
+	base_name = "secure positioning system"
+	desc = "A secure channel SPS. It announces the position of the wearer if killed or stripped off."
+	icon_state = "sps"
+	base_tag = "SEC"
 
-/obj/item/device/gps/internal
-	icon_state = null
-	flags = ABSTRACT
-	gpstag = "Eerie Signal"
-	desc = "Report to a coder immediately."
-	invisibility = INVISIBILITY_MAXIMUM
+/obj/item/device/gps/secure/handle_list()
+	SPS_list.Add(src)
 
-/obj/item/device/gps/internal/mining
-	icon_state = "gps-m"
-	gpstag = "MINER"
-	desc = "A positioning system helpful for rescuing trapped or injured miners, keeping one on you at all times while mining might just save your life."
+/obj/item/device/gps/secure/gen_id()
+	return SPS_list.len
 
-/obj/item/device/gps/internal/base
-	gpstag = "NT_AUX"
-	desc = "A homing signal from Nanotrasen's mining base."
+/obj/item/device/gps/secure/get_list()
+	return SPS_list.Copy()
 
-/obj/item/device/gps/visible_debug
-	name = "visible GPS"
-	gpstag = "ADMIN"
-	desc = "This admin-spawn GPS unit leaves the coordinates visible \
-		on any turf that it passes over, for debugging. Especially useful \
-		for marking the area around the transition edges."
-	var/list/turf/tagged
+/obj/item/device/gps/secure/OnMobDeath(mob/wearer)
+	if(emped)
+		return
 
-/obj/item/device/gps/visible_debug/New()
+	for(var/E in SPS_list)
+		var/obj/item/device/gps/secure/S = E //No idea why casting it like this makes it work better instead of just defining it in the for each
+		S.announce(wearer, src, "has detected the death of their wearer")
+
+/obj/item/device/gps/secure/stripped(mob/wearer)
+	if(emped)
+		return
 	. = ..()
-	tagged = list()
-	fast_processing.Add(src)
 
-/obj/item/device/gps/visible_debug/process()
-	var/turf/T = get_turf(src)
-	if(T)
-		// I assume it's faster to color,tag and OR the turf in, rather
-		// then checking if its there
-		T.color = RANDOM_COLOUR
-		T.maptext = "[T.x],[T.y],[T.z]"
-		tagged |= T
+	for(var/E in SPS_list)
+		var/obj/item/device/gps/secure/S = E
+		S.announce(wearer, src, "has been stripped from their wearer")
 
-/obj/item/device/gps/visible_debug/proc/clear()
-	while(tagged.len)
-		var/turf/T = pop(tagged)
-		T.color = initial(T.color)
-		T.maptext = initial(T.maptext)
-
-/obj/item/device/gps/visible_debug/Destroy()
-	if(tagged)
-		clear()
-	tagged = null
-	fast_processing.Remove(src)
-	. = ..()
+/obj/item/device/gps/secure/proc/announce(var/mob/wearer, var/obj/item/device/gps/secure/SPS, var/reason)
+	var/turf/pos = get_turf(SPS)
+	var/mob/living/L = get_holder_of_type(src, /mob/living/)
+	if(L)
+		L.show_message("\icon[src] [gpstag] beeps: <span class='danger'>Warning! SPS '[SPS.gpstag]' [reason] at [get_area(SPS)] ([pos.x-WORLD_X_OFFSET[pos.z]], [pos.y-WORLD_Y_OFFSET[pos.z]], [pos.z]).</span>", MESSAGE_HEAR)
+	else if(isturf(src.loc))
+		src.visible_message("\icon[src] [gpstag] beeps: <span class='danger'>Warning! SPS '[SPS.gpstag]' [reason] at [get_area(SPS)] ([pos.x-WORLD_X_OFFSET[pos.z]], [pos.y-WORLD_Y_OFFSET[pos.z]], [pos.z]).</span>")

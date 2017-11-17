@@ -1,399 +1,411 @@
+#define MAX_POFFSET 10
+
+#define MAX_X (world.maxx + 50)
+#define MIN_X -49
+
+#define MAX_Y (world.maxy + 50)
+#define MIN_Y -49
+
+#define DIRECTION_SEND    0
+#define DIRECTION_RECEIVE 1
+
 /obj/machinery/computer/telescience
 	name = "telepad control console"
 	desc = "Used to teleport objects to and from the telescience telepad."
-	icon_keyboard = "telesci_key"
-	icon_screen = "telesci"
-	circuit = /obj/item/weapon/circuitboard/telesci_console
-	req_access = list(access_research)
-	var/sending = 1
+	icon_state = "teleport"
+	circuit = "/obj/item/weapon/circuitboard/telesci_computer"
 	var/obj/machinery/telepad/telepad = null
-	var/temp_msg = "Telescience control console initialized.<BR>Welcome."
 
 	// VARIABLES //
-	var/teles_left	// How many teleports left until it becomes uncalibrated
-	var/datum/projectile_data/last_tele_data = null
-	var/z_co = 1
-	var/power_off
-	var/rotation_off
-	//var/angle_off
-	var/last_target
+	var/teles_left       // How many teleports left until it becomes uncalibrated
+	var/x_off            // X offset
+	var/y_off            // Y offset
+	var/x_player_off = 0 // x offset set by player
+	var/y_player_off = 0 // y offset set by player
+	var/x_co = 1         // X coordinate
+	var/y_co = 1         // Y coordinate
+	var/z_co = 1         // Z coordinate
 
-	var/rotation = 0
-	var/angle = 45
-	var/power = 5
+	use_power = 1
+	idle_power_usage = 10
+	active_power_usage = 300
+	power_channel = EQUIP
+	var/obj/item/weapon/cell/cell
+	var/teleport_cell_usage=1000 // 100% of a standard cell
+	processing=1
 
-	// Based on the power used
-	var/teleport_cooldown = 0 // every index requires a bluespace crystal
-	var/list/power_options = list(5, 10, 20, 25, 30, 40, 50, 80)
-	var/teleporting = 0
-	var/starting_crystals = 0
-	var/max_crystals = 4
-	var/list/crystals = list()
-	var/obj/item/device/gps/inserted_gps
+	light_color = LIGHT_COLOR_BLUE
 
 /obj/machinery/computer/telescience/New()
 	..()
-	recalibrate()
-
-/obj/machinery/computer/telescience/Destroy()
-	eject()
-	if(inserted_gps)
-		inserted_gps.forceMove(loc)
-		inserted_gps = null
-	return ..()
-
-/obj/machinery/computer/telescience/examine(mob/user)
-	..(user)
-	to_chat(user, "There are [crystals.len ? crystals.len : "no"] bluespace crystal\s in the crystal slots.")
+	teles_left = rand(12,14)
+	x_off = rand(-10,10)
+	y_off = rand(-10,10)
+	x_player_off = 0
+	y_player_off = 0
+	if (ticker && ticker.mode == GAME_STATE_PLAYING)
+		initialize()
 
 /obj/machinery/computer/telescience/initialize()
 	..()
-	for(var/i = 1; i <= starting_crystals; i++)
-		crystals += new /obj/item/weapon/ore/bluespace_crystal/artificial(null) // starting crystals
+	if (!ticker || ticker.current_state != GAME_STATE_PLAYING)
+		cell = new/obj/item/weapon/cell(src)
+		cell.charge = 0
 
-/obj/machinery/computer/telescience/attackby(obj/item/W, mob/user, params)
-	if(istype(W, /obj/item/weapon/ore/bluespace_crystal))
-		if(crystals.len >= max_crystals)
-			to_chat(user, "<span class='warning'>There are not enough crystal slots.</span>")
-			return
-		user.drop_item()
-		crystals += W
-		W.loc = null
-		user.visible_message("<span class='notice'>[user] inserts [W] into \the [src]'s crystal slot.</span>")
-		updateUsrDialog()
-	else if(istype(W, /obj/item/device/gps))
-		if(!inserted_gps)
-			inserted_gps = W
-			user.unEquip(W)
-			W.loc = src
-			user.visible_message("<span class='notice'>[user] inserts [W] into \the [src]'s GPS device slot.</span>")
-			updateUsrDialog()
-	else if(istype(W, /obj/item/device/multitool))
-		var/obj/item/device/multitool/M = W
-		if(M.buffer && istype(M.buffer, /obj/machinery/telepad))
-			telepad = M.buffer
-			M.buffer = null
-			to_chat(user, "<span class = 'caution'>You upload the data from the [W.name]'s buffer.</span>")
-			updateUsrDialog()
-	else
-		..()
+	var/obj/machinery/telepad/possible_telepad = locate() in range(src, 7)
+	if (!possible_telepad.linked)
+		telepad = possible_telepad
+		telepad.linked = src
 
-/obj/machinery/computer/telescience/emag_act(user as mob)
-	if(!emagged)
-		to_chat(user, "<span class='notice'>You scramble the Telescience authentication key to an unknown signal. You should be able to teleport to more places now!</span>")
-		emagged = 1
+/obj/machinery/computer/telescience/Destroy()
+	if (telepad)
+		telepad.linked = null
+		telepad = null
+
+	..()
+
+/obj/machinery/computer/telescience/process()
+	if(!cell || (stat & (BROKEN|NOPOWER)) || !anchored)
+		return
+
+	var/used = cell.give(100)
+	if (used)
+		use_power(used * 2) // This used to use CELLRATE, but CELLRATE is fucking awful. feel free to fix this properly!
+		nanomanager.update_uis(src)
+
+/obj/machinery/computer/telescience/attackby(obj/item/weapon/W, mob/user)
+	if(..())
+		return TRUE
+
+	if(stat & BROKEN || !ispowercell(W) || !anchored)
+		return FALSE
+
+	if(cell)
+		to_chat(user, "<span class='warning'>There is already a cell in \the [name].</span>")
+		return TRUE
+
+	if(user.drop_item(W, src))
+		cell = W
+		user.visible_message("[user] inserts a cell into \the [src].", "You insert a cell into \the [src].")
+		nanomanager.update_uis(src)
 	else
-		to_chat(user, "<span class='warning'>The machine seems unaffected by the card swipe...</span>")
+		to_chat(user, "<span class='warning'>You can't let go of \the [W]!</span>")
+
+
+/obj/machinery/computer/telescience/update_icon()
+	if(stat & BROKEN)
+		icon_state = "teleportb"
+		return
+
+	if(stat & NOPOWER)
+		src.icon_state = "teleport0"
+
+	else
+		icon_state = initial(icon_state)
+
+/obj/machinery/computer/telescience/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = NANOUI_FOCUS)
+	if(stat & (BROKEN|NOPOWER))
+		return
+	if(user.stat || user.restrained())
+		return
+
+	var/list/cell_data=null
+	if(cell)
+		cell_data = list(
+			"charge" = cell.charge,
+			"maxcharge" = cell.maxcharge
+		)
+	var/list/data=list(
+		"pOffsetX" = x_player_off,
+		"pOffsetY" = y_player_off,
+		"coordx" = x_co,
+		"coordy" = y_co,
+		"coordz" = z_co,
+		"cell" = cell_data
+	)
+
+	ui = nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+
+	if (!ui)
+		ui = new(user, src, ui_key, "telescience_console.tmpl", name, 380, 210)
+		ui.set_initial_data(data)
+		ui.open()
+		// Disable auto updating.
+		// This UI doesn't change often except when the cell gets extra charge.
+		ui.set_auto_update(FALSE)
+
+/obj/machinery/computer/telescience/attack_paw(mob/user)
+	to_chat(user, "You are too primitive to use this computer.")
 
 /obj/machinery/computer/telescience/attack_ai(mob/user)
-	src.attack_hand(user)
+	return src.attack_hand(user)
 
 /obj/machinery/computer/telescience/attack_hand(mob/user)
-	if(..())
+	ui_interact(user)
+
+/obj/machinery/computer/telescience/proc/fizzle()
+	if (!telepad)
 		return
-	interact(user)
 
-/obj/machinery/computer/telescience/interact(mob/user)
-	user.set_machine(src)
-	var/t
-	if(!telepad)
-		in_use = 0     //Yeah so if you deconstruct teleporter while its in the process of shooting it wont disable the console
-		t += "<div class='statusDisplay'>No telepad located. <BR>Please add telepad data.</div><BR>"
-	else
-		if(inserted_gps)
-			t += "<A href='?src=[UID()];ejectGPS=1'>Eject GPS</A>"
-			t += "<A href='?src=[UID()];setMemory=1'>Set GPS memory</A>"
-		else
-			t += "<span class='linkOff'>Eject GPS</span>"
-			t += "<span class='linkOff'>Set GPS memory</span>"
-		t += "<div class='statusDisplay'>[temp_msg]</div><BR>"
-		t += "<A href='?src=[UID()];setrotation=1'>Set Bearing</A>"
-		t += "<div class='statusDisplay'>[rotation] degrees</div>"
-		t += "<A href='?src=[UID()];setangle=1'>Set Elevation</A>"
-		t += "<div class='statusDisplay'>[angle] degrees</div>"
-		t += "<span class='linkOn'>Set Power</span>"
-		t += "<div class='statusDisplay'>"
-
-		for(var/i = 1; i <= power_options.len; i++)
-			if(crystals.len + telepad.efficiency  < i)
-				t += "<span class='linkOff'>[power_options[i]]</span>"
-				continue
-			if(power == power_options[i])
-				t += "<span class='linkOn'>[power_options[i]]</span>"
-				continue
-			t += "<A href='?src=[UID()];setpower=[i]'>[power_options[i]]</A>"
-		t += "</div>"
-
-		t += "<A href='?src=[UID()];setz=1'>Set Sector</A>"
-		t += "<div class='statusDisplay'>[z_co ? z_co : "NULL"]</div>"
-
-		t += "<BR><A href='?src=[UID()];send=1'>Send</A>"
-		t += " <A href='?src=[UID()];receive=1'>Receive</A>"
-		t += "<BR><A href='?src=[UID()];recal=1'>Recalibrate Crystals</A> <A href='?src=[UID()];eject=1'>Eject Crystals</A>"
-
-		// Information about the last teleport
-		t += "<BR><div class='statusDisplay'>"
-		if(!last_tele_data)
-			t += "No teleport data found."
-		else
-			t += "Source Location: ([last_tele_data.src_x], [last_tele_data.src_y])<BR>"
-			//t += "Distance: [round(last_tele_data.distance, 0.1)]m<BR>"
-			t += "Time: [round(last_tele_data.time, 0.1)] secs<BR>"
-		t += "</div>"
-
-	var/datum/browser/popup = new(user, "telesci", name, 300, 500)
-	popup.set_content(t)
-	popup.open()
-	return
-
-/obj/machinery/computer/telescience/proc/sparks()
-	if(telepad)
-		var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-		s.set_up(5, 1, get_turf(telepad))
-		s.start()
-	else
-		return
+	spark(telepad)
+	visible_message("\The [telepad] weakly fizzles.", "you hear a weak fizzle", "\The [telepad] catches on fire!!!")
 
 /obj/machinery/computer/telescience/proc/telefail()
-	sparks()
-	visible_message("<span class='warning'>The telepad weakly fizzles.</span>")
-	return
-
-/obj/machinery/computer/telescience/proc/doteleport(mob/user)
-
-	if(teleport_cooldown > world.time)
-		temp_msg = "Telepad is recharging power.<BR>Please wait [round((teleport_cooldown - world.time) / 10)] seconds."
+	if(prob(95))
+		fizzle()
 		return
 
-	if(teleporting)
-		temp_msg = "Telepad is in use.<BR>Please wait."
+	if(prob(5))
+		// Irradiate everyone in telescience!
+		for(var/obj/machinery/telepad/E in machines)
+			var/L = get_turf(E)
+			spark(L)
+			for(var/mob/living/carbon/human/M in viewers(L, null))
+				M.apply_radiation(rand(10, 20), RAD_INTERNAL)
+				to_chat(M, "<span class='warning'>You feel strange.</span>")
 		return
 
-	if(telepad)
+	/* Lets not, for now.  - N3X
+	if(prob(1))
+		// AI CALL SHUTTLE I SAW RUNE, SUPER LOW CHANCE, CAN HARDLY HAPPEN
+		for(var/mob/living/carbon/O in viewers(src, null))
+			var/datum/game_mode/cult/temp = new
+			O.show_message("<span class='warning'>The telepad flashes with a strange light, and you have a sudden surge of allegiance toward the true dark one!</span>", 2)
+			O.mind.make_Cultist()
+			temp.grant_runeword(O)
+			sparks()
+		return
+	if(prob(1))
+		// VIVA LA FUCKING REVOLUTION BITCHES, SUPER LOW CHANCE, CAN HARDLY HAPPEN
+		for(var/mob/living/carbon/O in viewers(src, null))
+			O.show_message("<span class='warning'>The telepad flashes with a strange light, and you see all kind of images flash through your mind, of murderous things Nanotrasen has done, and you decide to rebel!</span>", 2)
+			O.mind.make_Rev()
+			sparks()
+		return
+	*/
 
-		var/truePower = Clamp(power + power_off, 1, 1000)
-		var/trueRotation = rotation + rotation_off
-		var/trueAngle = Clamp(angle, 1, 90)
+	if(prob(1))
+		// The OH SHIT FUCK GOD DAMN IT LYNCH THE SCIENTISTS event.
+		visible_message("<span class='warning'>The telepad changes colors rapidly, and opens a portal, and you see what your mind seems to think is the very threads that hold the pattern of the universe together, and a eerie sense of paranoia creeps into you.</span>")
+		for(var/mob/living/carbon/O in viewers(src, null)) //I-IT'S A FEEEEATUUUUUUUREEEEE
+			spacevine_infestation()
+		spark(telepad)
+		return
 
-		var/datum/projectile_data/proj_data = projectile_trajectory(telepad.x, telepad.y, trueRotation, trueAngle, truePower)
-		last_tele_data = proj_data
-
-		var/trueX = Clamp(round(proj_data.dest_x, 1), 1, world.maxx)
-		var/trueY = Clamp(round(proj_data.dest_y, 1), 1, world.maxy)
-		var/spawn_time = round(proj_data.time) * 10
-
-		var/turf/target = locate(trueX, trueY, z_co)
-		last_target = target
-		var/area/A = get_area(target)
-		flick("pad-beam", telepad)
-
-		if(spawn_time > 15) // 1.5 seconds
-			playsound(telepad.loc, 'sound/weapons/flash.ogg', 25, 1)
-			// Wait depending on the time the projectile took to get there
-			teleporting = 1
-			temp_msg = "Powering up bluespace crystals.<BR>Please wait."
-
-
-		spawn(round(proj_data.time) * 10) // in seconds
-			if(!telepad)
-				return
-			if(telepad.stat & NOPOWER)
-				return
-			teleporting = 0
-			teleport_cooldown = world.time + (power * 2)
-			teles_left -= 1
-
-			// use a lot of power
-			use_power(power * 10)
-
-			var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-			s.set_up(5, 1, get_turf(telepad))
-			s.start()
-
-			temp_msg = "Teleport successful.<BR>"
-			if(teles_left < 10)
-				temp_msg += "<BR>Calibration required soon."
+	if(prob(5))
+		// HOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOONK
+		for(var/mob/living/carbon/M in hearers(src, null))
+			M << sound('sound/items/AirHorn.ogg')
+			if(ishuman(M))
+				var/mob/living/carbon/human/H = M
+				if(H.earprot())
+					continue
+			to_chat(M, "<font color='red' size='7'>HONK</font>")
+			M.sleeping = 0
+			M.stuttering += 20
+			M.ear_deaf += 30
+			M.Knockdown(3)
+			if(prob(30))
+				M.Stun(10)
+				M.Paralyse(4)
 			else
-				temp_msg += "Data printed below."
-
-			var/sparks = get_turf(target)
-			var/datum/effect/system/spark_spread/y = new /datum/effect/system/spark_spread
-			y.set_up(5, 1, sparks)
-			y.start()
-
-			var/turf/source = target
-			var/turf/dest = get_turf(telepad)
-			var/log_msg = ""
-			log_msg += ": [key_name(user)] has teleported "
-
-			if(sending)
-				source = dest
-				dest = target
-
-			flick("pad-beam", telepad)
-			playsound(telepad.loc, 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
-			for(var/atom/movable/ROI in source)
-				// if is anchored, don't let through
-				if(ROI.anchored)
-					if(isliving(ROI))
-						var/mob/living/L = ROI
-						if(L.buckled)
-							// TP people on office chairs
-							if(L.buckled.anchored)
-								continue
-
-							log_msg += "[key_name(L)] (on a chair), "
-						else
-							continue
-					else if(!isobserver(ROI))
-						continue
-				if(ismob(ROI))
-					var/mob/T = ROI
-					log_msg += "[key_name(T)], "
-				else
-					log_msg += "[ROI.name]"
-					if(istype(ROI, /obj/structure/closet))
-						var/obj/structure/closet/C = ROI
-						log_msg += " ("
-						for(var/atom/movable/Q as mob|obj in C)
-							if(ismob(Q))
-								log_msg += "[key_name(Q)], "
-							else
-								log_msg += "[Q.name], "
-						if(dd_hassuffix(log_msg, "("))
-							log_msg += "empty)"
-						else
-							log_msg = dd_limittext(log_msg, length(log_msg) - 2)
-							log_msg += ")"
-					log_msg += ", "
-				do_teleport(ROI, dest)
-
-			if(dd_hassuffix(log_msg, ", "))
-				log_msg = dd_limittext(log_msg, length(log_msg) - 2)
-			else
-				log_msg += "nothing"
-			log_msg += " [sending ? "to" : "from"] [trueX], [trueY], [z_co] ([A ? A.name : "null area"])"
-			investigate_log(log_msg, "telesci")
-			updateUsrDialog()
-
-/obj/machinery/computer/telescience/proc/teleport(mob/user)
-	if(rotation == null || angle == null || z_co == null)
-		temp_msg = "ERROR!<BR>Set a angle, rotation and sector."
+				M.Jitter(500)
+			spark(M)
 		return
-	if(power <= 0)
-		telefail()
-		temp_msg = "ERROR!<BR>No power selected!"
+
+	if(prob(1))
+		// They did the mash! (They did the monster mash!) The monster mash! (It was a graveyard smash!)
+		spark(telepad)
+		for(var/obj/machinery/telepad/E in machines)
+			var/L = get_turf(E)
+			var/static/list/blocked = list(
+				/mob/living/simple_animal/hostile,
+				/mob/living/simple_animal/hostile/alien/queen/large,
+				/mob/living/simple_animal/hostile/retaliate,
+				/mob/living/simple_animal/hostile/retaliate/clown,
+				/mob/living/simple_animal/hostile/giant_spider/nurse
+			)
+			var/list/hostiles = existing_typesof(/mob/living/simple_animal/hostile) - blocked
+			playsound(L, 'sound/effects/phasein.ogg', 100, 1, extrarange = 3, falloff = 5)
+			for(var/mob/living/carbon/human/M in viewers(L, null))
+				M.flash_eyes(visual = 1)
+			var/chosen = pick(hostiles)
+			var/mob/living/simple_animal/hostile/H = new chosen
+			H.forceMove(L)
 		return
-	if(angle < 1 || angle > 90)
-		telefail()
-		temp_msg = "ERROR!<BR>Elevation is less than 1 or greater than 90."
+
+	// If nothing got chosen after all still fizzle,
+	// feedback is good.
+	fizzle()
+
+var/list/telesci_warnings = list(
+	/obj/machinery/power/supermatter,
+	/obj/machinery/the_singularitygen,
+	/obj/item/weapon/grenade,
+	/obj/item/device/transfer_valve,
+	/obj/item/device/fuse_bomb,
+	/obj/item/device/onetankbomb,
+	/obj/machinery/portable_atmospherics/canister
+)
+
+/obj/machinery/computer/telescience/proc/doteleport(mob/user, var/direction)
+	if (!telepad)
 		return
-	if(z_co == 2 || z_co < 1 || z_co > 6)
-		if(z_co == 7 & emagged == 1)
-		// This should be empty, allows for it to continue if the z-level is 7 and the machine is emagged.
-		else
-			telefail()
-			temp_msg = "ERROR! Sector is less than 1, <BR>greater than [src.emagged ? "7" : "6"], or equal to 2."
+
+	var/trueX = x_co + x_off - x_player_off + WORLD_X_OFFSET[z_co]
+	var/trueY = y_co + y_off - y_player_off + WORLD_Y_OFFSET[z_co]
+	trueX = Clamp(trueX, 1, world.maxx)
+	trueY = Clamp(trueY, 1, world.maxy)
+
+	var/turf/target = locate(trueX, trueY, z_co)
+	var/area/A=target.loc
+	if(A && A.jammed)
+		if(!telepad.amplifier || A.jammed==SUPER_JAMMED)
+			src.visible_message("<span class='warning'>[bicon(src)] \The [src] turns on and the lights dim. You can see a faint shape, but it loses focus and the telepad shuts off with a buzz.  Perhaps you need more signal strength?", "<span class='warning'>You hear something buzz.</span></span>")
 			return
 
+		if(prob(25))
+			qdel(telepad.amplifier)
+			telepad.amplifier = null
+			src.visible_message("[bicon(src)]<span class='notice'>You hear something shatter.</span>","[bicon(src)]<span class='notice'>You hear something shatter.</span>")
 
-	var/truePower = Clamp(power + power_off, 1, 1000)
-	var/trueRotation = rotation + rotation_off
-	var/trueAngle = Clamp(angle, 1, 90)
+	spark(telepad, 5)
+	flick("pad-beam", telepad)
+	to_chat(user, "<span class='caution'>Teleport successful.</span>")
+	spark(target, 5)
+	var/turf/source = target
+	var/turf/dest = get_turf(telepad)
+	if(direction == DIRECTION_SEND)
+		source = dest
+		dest = target
 
-	var/datum/projectile_data/proj_data = projectile_trajectory(telepad.x, telepad.y, trueRotation, trueAngle, truePower)
-	var/turf/target = locate(Clamp(round(proj_data.dest_x, 1), 1, world.maxx), Clamp(round(proj_data.dest_y, 1), 1, world.maxy), z_co)
-	var/area/A = get_area(target)
+	var/things = 0
+	for(var/atom/movable/ROI in source)
+		if(ROI.anchored)
+			continue
 
-	if(A.tele_proof == 1)
+		var/log = "[key_name(user)] teleported a [ROI] to [formatJumpTo(dest)] from [formatJumpTo(source)]"
+		if(is_type_in_list(ROI,telesci_warnings))
+			message_admins(log)
+
+		log_admin(log)
+		do_teleport(ROI, dest, 0)
+		if (++things > 10)
+			break
+
+
+/obj/machinery/computer/telescience/proc/teleport(mob/user, var/direction)
+	if(x_co == null || y_co == null || z_co == null)
+		to_chat(user, "<span class='caution'>Error: coordinates not set.</span>")
 		telefail()
-		temp_msg = "ERROR! Target destination unreachable due to interference."
 		return
 
+	if (!cell)
+		to_chat(user, "<span class='caution'>Error: no cell inserted.</span>")
+		return
+
+	if(cell.charge < teleport_cell_usage)
+		to_chat(user, "<span class='caution'>Error: not enough buffer energy.</span>")
+		return
+
+	cell.use(teleport_cell_usage)
 	if(teles_left > 0)
-		doteleport(user)
+		teles_left -= 1
+		doteleport(user, direction)
 	else
 		telefail()
-		temp_msg = "ERROR!<BR>Calibration required."
-		return
-	return
 
-/obj/machinery/computer/telescience/proc/eject()
+/obj/machinery/computer/telescience/npc_tamper_act(mob/living/L)
+	x_player_off = rand(-MAX_POFFSET, MAX_POFFSET)
+	y_player_off = rand(-MAX_POFFSET, MAX_POFFSET)
 
-	for(var/obj/item/I in crystals)
-		I.loc = loc
-		I.pixel_y = -9
-		crystals -= I
-	power = 0
+	x_co = rand(MIN_X, MAX_X)
+	y_co = rand(MIN_Y, MAX_Y)
+	var/new_z = rand(1, map.zLevels.len)
+	if(new_z != map.zCentcomm)
+		z_co = new_z
+
+	if (cell && cell.charge < teleport_cell_usage)
+		var/direction = pick(DIRECTION_RECEIVE, DIRECTION_SEND)
+		teleport(L, direction)
+
+	nanomanager.update_uis(src)
 
 /obj/machinery/computer/telescience/Topic(href, href_list)
 	if(..())
-		return
-	if(!telepad)
-		updateUsrDialog()
-		return
-	if(telepad.panel_open)
-		temp_msg = "Telepad undergoing physical maintenance operations."
+		return TRUE
 
-	if(href_list["setrotation"])
-		var/new_rot = input("Please input desired bearing in degrees.", name, rotation) as num
-		if(..()) // Check after we input a value, as they could've moved after they entered something
-			return
-		rotation = Clamp(new_rot, -900, 900)
-		rotation = round(rotation, 0.01)
+	if(href_list["setPOffsetX"])
+		var/new_x = input("Please input desired X offset.", name, x_player_off) as num
+		if(new_x < -MAX_POFFSET || new_x > MAX_POFFSET)
+			to_chat(usr, "<span class='caution'>Error: Invalid X offset (-10 to 10)</span>")
+		else
+			x_player_off = new_x
+		return TRUE
 
-	if(href_list["setangle"])
-		var/new_angle = input("Please input desired elevation in degrees.", name, angle) as num
-		if(..())
-			return
-		angle = Clamp(round(new_angle, 0.1), 1, 9999)
+	if(href_list["setPOffsetY"])
+		var/new_y = input("Please input desired X offset.", name, y_player_off) as num
+		if(new_y < -MAX_POFFSET || new_y > MAX_POFFSET)
+			to_chat(usr, "<span class='caution'>Error: Invalid Y offset (-10 to 10)</span>")
+		else
+			y_player_off = new_y
+		return TRUE
 
-	if(href_list["setpower"])
-		var/index = href_list["setpower"]
-		index = text2num(index)
-		if(index != null && power_options[index])
-			if(crystals.len + telepad.efficiency >= index)
-				power = power_options[index]
+
+	if(href_list["setx"])
+		var/new_x = input("Please input desired X coordinate.", name, x_co) as num
+		var/x_validate=new_x+x_off
+		if(x_validate < MIN_X || x_validate > MAX_X)
+			to_chat(usr, "<span class='caution'>Error: Invalid X coordinate.</span>")
+		else
+			x_co = new_x
+		return TRUE
+
+	if(href_list["sety"])
+		var/new_y = input("Please input desired Y coordinate.", name, y_co) as num
+		var/y_validate=new_y+y_off
+		if(y_validate < MIN_Y || y_validate > MAX_Y)
+			to_chat(usr, "<span class='caution'>Error: Invalid Y coordinate.</span>")
+		else
+			y_co = new_y
+		return TRUE
 
 	if(href_list["setz"])
-		var/new_z = input("Please input desired sector.", name, z_co) as num
-		if(..())
-			return
-		z_co = Clamp(round(new_z), 1, 10)
-
-	if(href_list["ejectGPS"])
-		if(inserted_gps)
-			usr.put_in_hands(inserted_gps)
-			inserted_gps = null
-
-	if(href_list["setMemory"])
-		if(last_target && inserted_gps)
-			inserted_gps.locked_location = last_target
-			temp_msg = "Location saved."
+		var/new_z = input("Please input desired Z coordinate.", name, z_co) as num
+		if(new_z == map.zCentcomm || new_z < 1 || new_z > map.zLevels.len)
+			to_chat(usr, "<span class='caution'>Error: Invalid Z coordinate.</span>")
 		else
-			temp_msg = "ERROR!<BR>No data was stored."
+			z_co = new_z
+		return TRUE
 
 	if(href_list["send"])
-		sending = 1
-		teleport(usr)
+		if(cell && cell.charge>=teleport_cell_usage)
+			teleport(usr, DIRECTION_SEND)
+		return TRUE
 
 	if(href_list["receive"])
-		sending = 0
-		teleport(usr)
+		if(cell && cell.charge>=teleport_cell_usage)
+			teleport(usr, DIRECTION_RECEIVE)
+		return TRUE
+
+	if(href_list["eject_cell"])
+		if(cell)
+			usr.put_in_hands(cell)
+			cell.add_fingerprint(usr)
+			cell.updateicon()
+			src.cell = null
+			usr.visible_message("[usr] removes the cell from \the [name].", "You remove the cell from \the [name].")
+			update_icon()
+		return TRUE
 
 	if(href_list["recal"])
-		recalibrate()
-		sparks()
-		temp_msg = "NOTICE:<BR>Calibration successful."
+		teles_left = rand(12,14)
+		x_off = rand(-10,10)
+		y_off = rand(-10,10)
+		spark(telepad)
+		to_chat(usr, "<span class='caution'>Calibration successful.</span>")
+		return TRUE
+	return FALSE
 
-	if(href_list["eject"])
-		eject()
-		temp_msg = "NOTICE:<BR>Bluespace crystals ejected."
-
-	updateUsrDialog()
-
-/obj/machinery/computer/telescience/proc/recalibrate()
-	teles_left = rand(30, 40)
-	//angle_off = rand(-25, 25)
-	power_off = rand(-4, 0)
-	rotation_off = rand(-10, 10)
+#undef DIRECTION_SEND
+#undef DIRECTION_RECEIVE
